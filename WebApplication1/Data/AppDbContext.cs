@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ConsoleApp1.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConsoleApp1.Data
 {
-    internal class AppDbContext: DbContext
+    public class AppDbContext: DbContext
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+        public DbSet<User> Users { set; get; }
     }
 }
