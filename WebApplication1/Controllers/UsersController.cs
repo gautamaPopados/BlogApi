@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using System.Net;
 using WebApplication1.Data.DTO;
 using WebApplication1.Services.IServices;
@@ -8,11 +7,11 @@ namespace WebApplication1.Controllers
 {
     [Route("api/user")]
     [ApiController]
-    public class UserController : Controller
+    public class UsersController : Controller
     {
         private readonly IUserService _userService;
         protected APIResponse _response;
-        public UserController(IUserService userService)
+        public UsersController(IUserService userService)
         {
             _userService = userService;
             this._response = new();
@@ -56,6 +55,17 @@ namespace WebApplication1.Controllers
 
             _response.status = HttpStatusCode.OK;
             return Ok(_response);
+        }
+
+        [AcceptVerbs("GET", "POST")]
+        public IActionResult VerifyEmail(string email)
+        {
+            if (!_userService.IsUniqueUser(email))
+            {
+                return Json($"Username {email} is already taken.");
+            }
+
+            return Json(true);
         }
     }
 }

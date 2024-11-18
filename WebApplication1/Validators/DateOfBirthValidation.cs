@@ -4,14 +4,19 @@ namespace WebApplication1.Validators
 {
     public class DateOfBirthValidation : ValidationAttribute
     {
-        public override bool IsValid(object? value)
+        protected override ValidationResult IsValid(object value, ValidationContext context)
         {
-            if (value is DateTime dateTime)
+            var date = value as DateTime?;
+
+            if (date != null)
             {
-                return dateTime <= DateTime.Now;
+                if (date.Value.Date > DateTime.UtcNow.Date)
+                {
+                    return new ValidationResult("This must not be a date in the future");
+                }
             }
 
-            return false;
+            return ValidationResult.Success;
         }
     }
 }

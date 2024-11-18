@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using WebApplication1.Data.Enums;
 
 namespace WebApplication1.Data.DTO
 {
@@ -10,7 +11,7 @@ namespace WebApplication1.Data.DTO
         [RegularExpression(@"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}", ErrorMessage = "Некорректный адрес")]
         public string email { get; set; }
         public DateTime birthDate { get; set; }
-        public string gender {  get; set; }
+        public Gender gender {  get; set; }
         public string phoneNumber { get; set; }
 
     }

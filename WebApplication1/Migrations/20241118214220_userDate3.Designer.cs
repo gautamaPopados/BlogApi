@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20241117161419_updateUsers")]
-    partial class updateUsers
+    [Migration("20241118214220_userDate3")]
+    partial class userDate3
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -31,9 +31,8 @@ namespace WebApplication1.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("birthDate")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<DateTime>("birthDate")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("email")
                         .IsRequired()
@@ -43,9 +42,8 @@ namespace WebApplication1.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("gender")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("gender")
+                        .HasColumnType("integer");
 
                     b.Property<string>("password")
                         .IsRequired()
