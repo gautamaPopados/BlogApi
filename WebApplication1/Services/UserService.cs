@@ -6,6 +6,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using WebApplication1.Data.DTO;
+using WebApplication1.Exceptions;
 using WebApplication1.Services.IServices;
 
 namespace WebApplication1.Services
@@ -23,6 +24,7 @@ namespace WebApplication1.Services
         public bool IsUniqueUser(string email)
         {
             var user = _db.Users.FirstOrDefault(x => x.email == email);
+            
             if (user == null)
             {
                 return true;
@@ -32,15 +34,15 @@ namespace WebApplication1.Services
 
         public async Task<LoginResponseDTO> Login(LoginRequestDTO loginRequestDTO)
         {
-            var user = _db.Users.FirstOrDefault(u => u.email == loginRequestDTO.email &&
-            u.password == loginRequestDTO.password);
+            var user = _db.Users.FirstOrDefault(u => u.email == loginRequestDTO.email);
 
             if (user == null)
             {
-                return new LoginResponseDTO()
-                {
-                    token = ""
-                };
+                throw new BadRequestException("email or password is incorrect");
+            }
+            else if (!BCrypt.Net.BCrypt.Verify(loginRequestDTO.password, user.password))
+            {
+                throw new BadRequestException("email or password is incorrect");
             }
 
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -71,7 +73,7 @@ namespace WebApplication1.Services
             {
                 fullName = registrationRequestDTO.fullName,
                 email = registrationRequestDTO.email,
-                password = registrationRequestDTO.password,
+                password = BCrypt.Net.BCrypt.HashPassword(registrationRequestDTO.password),
                 birthDate = registrationRequestDTO.birthDate,
                 gender = registrationRequestDTO.gender,
                 phoneNumber = registrationRequestDTO.phoneNumber

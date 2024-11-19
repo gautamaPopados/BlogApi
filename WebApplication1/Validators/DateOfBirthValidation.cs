@@ -1,22 +1,26 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using WebApplication1.Data.Enums;
 
 namespace WebApplication1.Validators
 {
-    public class DateOfBirthValidation : ValidationAttribute
+    public class DateOfBirthAttribute : ValidationAttribute
     {
-        protected override ValidationResult IsValid(object value, ValidationContext context)
-        {
-            var date = value as DateTime?;
+        public string GetErrorMessage() => "DoB must not be a date in the future";
 
-            if (date != null)
+        protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
+        {
+            if (value is DateTime date)
             {
-                if (date.Value.Date > DateTime.UtcNow.Date)
+                if (date > DateTime.UtcNow)
                 {
-                    return new ValidationResult("This must not be a date in the future");
+                    return new ValidationResult(GetErrorMessage());
                 }
+
+                return ValidationResult.Success;
             }
 
-            return ValidationResult.Success;
+            return ValidationResult.Success; 
         }
+
     }
 }
