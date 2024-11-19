@@ -3,6 +3,7 @@ using ConsoleApp1.Data.Entities;
 using Microsoft.IdentityModel.Tokens;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using System.Text;
 using WebApplication1.Data.DTO;
@@ -32,57 +33,64 @@ namespace WebApplication1.Services
             return false;
         }
 
-        public async Task<LoginResponseDTO> Login(LoginRequestDTO loginRequestDTO)
+        public async Task<AuthorizationResponseDTO> Login(LoginRequestDTO loginRequestDTO)
         {
-            var user = _db.Users.FirstOrDefault(u => u.email == loginRequestDTO.email);
+            var user = _db.Users.FirstOrDefault(u => u.email == loginRequestDTO.Email);
 
             if (user == null)
             {
                 throw new BadRequestException("email or password is incorrect");
             }
-            else if (!BCrypt.Net.BCrypt.Verify(loginRequestDTO.password, user.password))
+            else if (!BCrypt.Net.BCrypt.Verify(loginRequestDTO.Password, user.password))
             {
                 throw new BadRequestException("email or password is incorrect");
             }
 
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(secretKey);
+            
+            var token = GenerateToken(user);
 
-            var tokenDescriptor = new SecurityTokenDescriptor()
+            AuthorizationResponseDTO loginResponseDTO = new AuthorizationResponseDTO()
             {
-                Subject = new ClaimsIdentity(new Claim[]
-                {
-                    new Claim(ClaimTypes.Name, user.Id.ToString())
-
-                }),
-                Expires = DateTime.UtcNow.AddHours(1),
-                SigningCredentials = new(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-            };
-
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            LoginResponseDTO loginResponseDTO = new LoginResponseDTO()
-            {
-                token = tokenHandler.WriteToken(token),
+                Token = token,
             };
             return loginResponseDTO;
         }
 
-        public async Task<LoginResponseDTO> Register(RegistrationRequestDTO registrationRequestDTO)
+        public async Task<AuthorizationResponseDTO> Register(RegistrationRequestDTO registrationRequestDTO)
         {
+
+            if (!IsUniqueUser(registrationRequestDTO.Email))
+            {
+                throw new BadRequestException($"Username '{registrationRequestDTO.Email}' is already taken.");
+            }
+
             User user = new User()
             {
-                fullName = registrationRequestDTO.fullName,
-                email = registrationRequestDTO.email,
-                password = BCrypt.Net.BCrypt.HashPassword(registrationRequestDTO.password),
-                birthDate = registrationRequestDTO.birthDate,
-                gender = registrationRequestDTO.gender,
-                phoneNumber = registrationRequestDTO.phoneNumber
+                fullName = registrationRequestDTO.FullName,
+                email = registrationRequestDTO.Email,
+                password = BCrypt.Net.BCrypt.HashPassword(registrationRequestDTO.Password),
+                birthDate = registrationRequestDTO.BirthDate,
+                gender = registrationRequestDTO.Gender,
+                phoneNumber = registrationRequestDTO.PhoneNumber
             };
 
             _db.Users.Add(user);
             _db.SaveChangesAsync();
+
             user.password = "";
 
+            var token = GenerateToken(user);
+            AuthorizationResponseDTO loginResponseDTO = new AuthorizationResponseDTO()
+            {
+                Token = token,
+            };
+
+            return loginResponseDTO;
+
+        }
+
+        public String GenerateToken (User user)
+        {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(secretKey);
 
@@ -98,12 +106,8 @@ namespace WebApplication1.Services
             };
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
-            LoginResponseDTO loginResponseDTO = new LoginResponseDTO()
-            {
-                token = tokenHandler.WriteToken(token),
-            };
-            return loginResponseDTO;
 
+            return tokenHandler.WriteToken(token);
         }
     }
 }

@@ -8,26 +8,26 @@ namespace WebApplication1.Data.DTO
     public class RegistrationRequestDTO
     {
         [Required(AllowEmptyStrings = false ,ErrorMessage = "The FullName field is required.")]
-        public string fullName { get; set; }
+        public string FullName { get; set; }
 
         [Required(AllowEmptyStrings = false, ErrorMessage = "The Password field is required.")]
         [PasswordValidation]
-        public string password { get; set; }
+        public string Password { get; set; }
 
         [Required(ErrorMessage = "The Email field is required.")]
         [RegularExpression(@"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}", ErrorMessage = "The Email field is not a valid Email adress")]
-        public string email { get; set; }
+        public string Email { get; set; }
 
         [DateOfBirth]
         [Required(AllowEmptyStrings = false, ErrorMessage = "The BirthDate field is required.")]
-        public DateTime? birthDate { get; set; }
+        public DateTime? BirthDate { get; set; }
 
         [Required(AllowEmptyStrings = false, ErrorMessage = "The Gender field is required.")]
-        public Gender gender {  get; set; }
+        public Gender Gender {  get; set; }
 
         [Required(AllowEmptyStrings = false, ErrorMessage = "The PhoneNumber field is required.")]
         [RegularExpression(@"^\+7\d{10}$", ErrorMessage = "The PhoneNumber field is not a valid phone number.")]
-        public string phoneNumber { get; set; }
+        public string PhoneNumber { get; set; }
 
     }
 }
