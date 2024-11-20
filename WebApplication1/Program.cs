@@ -1,8 +1,10 @@
 using ConsoleApp1.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using WebApplication1.Middleware;
 using WebApplication1.Services;
@@ -13,7 +15,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 // Add services to the container.
-var key = builder.Configuration.GetValue<string>("ApiSetting:Secret");
+//builder.Services.AddScoped<ITokenBlacklistService, TokenBlacklistService>();
+builder.Services.AddScoped<IUserService, UserService>();
+
+var key = builder.Configuration.GetValue<string>("ApiSettings:Secret");
+
 
 builder.Services.AddAuthentication(options =>
 {
@@ -29,7 +35,24 @@ builder.Services.AddAuthentication(options =>
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(key)),
             ValidateIssuer = false,
-            ValidateAudience = false
+            ValidateAudience = false,
+            ValidateLifetime = true
+        };
+        x.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                System.Diagnostics.Debug.WriteLine("onFailed ///  ");
+
+                var token = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", string.Empty);
+                var userService = context.HttpContext.RequestServices.GetService<IUserService>();
+                if (userService.IsTokenBlacklisted(token))
+                {
+                    context.Fail("Token is blacklisted.");
+                }
+
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -45,13 +68,18 @@ builder.Services.AddSwaggerGen(options =>
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description =
-            "JWT Authorization header using the Bearer scheme. \r\n\r\n " +
-            "Enter 'Bearer' [space] and then your token in the text input below.\r\n\r\n" +
-            "Example: \"Bearer 12345abcdef\"",
+        BearerFormat = "JWT",
+        Type = SecuritySchemeType.Http,
+        Description = "Put **_ONLY_** your JWT Bearer token on textbox below!",
         Name = "Authorization",
         In = ParameterLocation.Header,
-        Scheme = "Bearer"
+        Scheme = JwtBearerDefaults.AuthenticationScheme,
+
+        Reference = new OpenApiReference
+        {
+            Id = JwtBearerDefaults.AuthenticationScheme,
+            Type = ReferenceType.SecurityScheme
+        }
     });
     options.AddSecurityRequirement(new OpenApiSecurityRequirement()
     {
@@ -72,7 +100,6 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddControllersWithViews()
     .AddViewLocalization()
     .AddDataAnnotationsLocalization();

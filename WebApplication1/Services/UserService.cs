@@ -15,7 +15,11 @@ namespace WebApplication1.Services
     public class UserService : IUserService
     {
         private readonly AppDbContext _db;
+
         private string secretKey;
+
+        private static HashSet<string> blacklistedTokens = new HashSet<string>();
+
         public UserService(AppDbContext db, IConfiguration configuration)
         {
             _db = db;
@@ -56,6 +60,24 @@ namespace WebApplication1.Services
             return loginResponseDTO;
         }
 
+        public async Task Logout(string token)
+        {
+            if (string.IsNullOrEmpty(token))
+            {
+                throw new UnauthorizedAccessException();
+            }
+
+            blacklistedTokens.Add(token);
+        }
+
+        public bool IsTokenBlacklisted(string token)
+        {
+            System.Diagnostics.Debug.WriteLine("JWt is blacklisted = " + token);
+            System.Diagnostics.Debug.WriteLine(blacklistedTokens.Count());
+
+            return blacklistedTokens.Contains(token);
+        }
+
         public async Task<AuthorizationResponseDTO> Register(RegistrationRequestDTO registrationRequestDTO)
         {
 
@@ -75,7 +97,7 @@ namespace WebApplication1.Services
             };
 
             _db.Users.Add(user);
-            _db.SaveChangesAsync();
+            await _db.SaveChangesAsync();
 
             user.password = "";
 

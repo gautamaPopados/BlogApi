@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ConsoleApp1.Data.Entities;
+﻿using ConsoleApp1.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConsoleApp1.Data
@@ -12,5 +7,7 @@ namespace ConsoleApp1.Data
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
         public DbSet<User> Users { set; get; }
+        //public DbSet<RevokedToken> RevokedTokens { get; set; }
+
     }
 }

@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Net.Mail;
 using WebApplication1.Data.DTO;
+using WebApplication1.Services;
 using WebApplication1.Services.IServices;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace WebApplication1.Controllers
 {
@@ -43,12 +45,17 @@ namespace WebApplication1.Controllers
         }
 
         [Authorize]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
 
-            return Ok();
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
+             await _userService.Logout(token);
+            System.Diagnostics.Debug.WriteLine("JWt logout token = " + token);
+            //_tokenBlacklistService.RevokeToken(token);
+
+            return Ok(new { message = "Logged out successfully" });
         }
     }
 }
