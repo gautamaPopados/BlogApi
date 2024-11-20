@@ -8,9 +8,12 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using WebApplication1.Middleware;
 using WebApplication1.Services;
+using WebApplication1.Validators;
 using WebApplication1.Services.IServices;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
+var tokenLifetimeManager = new JwtTokenLifetimeManager();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -18,6 +21,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 //builder.Services.AddScoped<ITokenBlacklistService, TokenBlacklistService>();
 builder.Services.AddScoped<IUserService, UserService>();
 
+builder.Services
+       .AddSingleton<ITokenLifetimeManager>(tokenLifetimeManager);
 var key = builder.Configuration.GetValue<string>("ApiSettings:Secret");
 
 
@@ -36,24 +41,32 @@ builder.Services.AddAuthentication(options =>
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(key)),
             ValidateIssuer = false,
             ValidateAudience = false,
-            ValidateLifetime = true
+            ValidateLifetime = true,
+            LifetimeValidator = tokenLifetimeManager.ValidateTokenLifetime
         };
+
         x.Events = new JwtBearerEvents
         {
             OnAuthenticationFailed = context =>
             {
-                System.Diagnostics.Debug.WriteLine("onFailed ///  ");
-
-                var token = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", string.Empty);
-                var userService = context.HttpContext.RequestServices.GetService<IUserService>();
-                if (userService.IsTokenBlacklisted(token))
+                if (context.HttpContext.GetEndpoint()?.Metadata.Any(m => m is AuthorizeAttribute) == true)
                 {
-                    context.Fail("Token is blacklisted.");
+                    throw new UnauthorizedAccessException();
+                }
+
+                return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                if (context.HttpContext.GetEndpoint()?.Metadata.Any(m => m is AuthorizeAttribute) == true)
+                {
+                    throw new UnauthorizedAccessException();
                 }
 
                 return Task.CompletedTask;
             }
         };
+
     });
 
 builder.Services.AddControllers();
