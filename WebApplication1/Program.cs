@@ -1,30 +1,25 @@
 using ConsoleApp1.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using WebApplication1.Middleware;
 using WebApplication1.Services;
-using WebApplication1.Validators;
 using WebApplication1.Services.IServices;
 using Microsoft.AspNetCore.Authorization;
+using WebApplication1.AuthentificationServices;
 
 var builder = WebApplication.CreateBuilder(args);
 var tokenLifetimeManager = new JwtTokenLifetimeManager();
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-// Add services to the container.
-//builder.Services.AddScoped<ITokenBlacklistService, TokenBlacklistService>();
+builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IUserService, UserService>();
 
-builder.Services
-       .AddSingleton<ITokenLifetimeManager>(tokenLifetimeManager);
-var key = builder.Configuration.GetValue<string>("ApiSettings:Secret");
+builder.Services.AddSingleton<ITokenLifetimeManager>(tokenLifetimeManager);
+builder.Services.AddSingleton<TokenService>();
 
+var key = builder.Configuration.GetValue<string>("ApiSettings:Secret");
 
 builder.Services.AddAuthentication(options =>
 {
@@ -118,7 +113,9 @@ builder.Services.AddControllersWithViews()
     .AddDataAnnotationsLocalization();
 var app = builder.Build();
 
-
+using var serviceScope = app.Services.CreateScope();
+var dbContext = serviceScope.ServiceProvider.GetService<AppDbContext>();
+dbContext?.Database.Migrate();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -133,6 +130,7 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 app.MapControllers();

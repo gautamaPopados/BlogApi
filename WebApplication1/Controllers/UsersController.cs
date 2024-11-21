@@ -1,12 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Filters;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
-using System.Net.Mail;
+using WebApplication1.AuthentificationServices;
 using WebApplication1.Data.DTO;
-using WebApplication1.Services;
+using WebApplication1.Exceptions;
+using WebApplication1.Middleware;
 using WebApplication1.Services.IServices;
-using WebApplication1.Validators;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace WebApplication1.Controllers
@@ -28,7 +30,11 @@ namespace WebApplication1.Controllers
 
         /// <summary>
         /// Log in to the system
-        /// </summary
+        /// </summary>
+        
+        [ProducesResponseType(typeof(AuthorizationResponseDTO), 200)]
+        [ProducesResponseType(typeof(ExceptionResponse), 400)]
+        [ProducesResponseType(typeof(ExceptionResponse), 500)]
         [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDTO model)
@@ -41,6 +47,9 @@ namespace WebApplication1.Controllers
         /// <summary>
         /// Register new user
         /// </summary>
+        [ProducesResponseType(typeof(AuthorizationResponseDTO), 200)]
+        [ProducesResponseType(typeof(ExceptionResponse), 400)]
+        [ProducesResponseType(typeof(ExceptionResponse), 500)]
         [AllowAnonymous]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegistrationRequestDTO model)
@@ -50,6 +59,12 @@ namespace WebApplication1.Controllers
             return Ok(RegisterResponse);
         }
 
+        /// <summary>
+        /// Log out of the system
+        /// </summary>
+        [ProducesResponseType(typeof(ExceptionResponse), 400)]
+        [ProducesResponseType(typeof(ExceptionResponse), 401)]
+        [ProducesResponseType(typeof(ExceptionResponse), 500)]
         [Authorize]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
@@ -66,13 +81,25 @@ namespace WebApplication1.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Get user profile
+        /// </summary>
+        [ProducesResponseType(typeof(ProfileResponseDTO), 200)]
+        [ProducesResponseType(typeof(ExceptionResponse), 400)]
+        [ProducesResponseType(typeof(ExceptionResponse), 401)]
+        [ProducesResponseType(typeof(ExceptionResponse), 500)]
         [Authorize]
-        [HttpPost("test")]
-        public async Task<IActionResult> Test()
+        [HttpGet("profile")]
+        public async Task<ActionResult<ProfileResponseDTO>> GetProfile()
         {
-            
-            return Ok();
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
+             var profileResponse = await _userService.GetProfile(token);
+
+            return profileResponse;
         }
+
+        
 
 
     }

@@ -2,7 +2,7 @@
 using System.Collections.Concurrent;
 using System.IdentityModel.Tokens.Jwt;
 
-namespace WebApplication1.Validators
+namespace WebApplication1.AuthentificationServices
 {
     public class JwtTokenLifetimeManager : ITokenLifetimeManager
     {

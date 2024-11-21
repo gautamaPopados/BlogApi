@@ -19,6 +19,9 @@ namespace ConsoleApp1.Data.Entities
         [DataType(DataType.Date)]
         public DateTime? birthDate {  get; set; }
 
+        [DataType(DataType.Date)]
+        public DateTime createTime {  get; set; }
+
         [DataType(DataType.Password)]
         public string password { get; set; }
 

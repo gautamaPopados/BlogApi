@@ -1,11 +1,13 @@
 ﻿using ConsoleApp1.Data;
 using ConsoleApp1.Data.Entities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
 using System.Text;
+using WebApplication1.AuthentificationServices;
 using WebApplication1.Data.DTO;
 using WebApplication1.Exceptions;
 using WebApplication1.Services.IServices;
@@ -15,15 +17,12 @@ namespace WebApplication1.Services
     public class UserService : IUserService
     {
         private readonly AppDbContext _db;
+        private readonly TokenService _tokenService;
 
-        private string secretKey;
-
-        private static HashSet<string> blacklistedTokens = new HashSet<string>();
-
-        public UserService(AppDbContext db, IConfiguration configuration)
+        public UserService(AppDbContext db, IConfiguration configuration, TokenService tokenService)
         {
             _db = db;
-            secretKey = configuration.GetValue<string>("ApiSettings:Secret");
+            _tokenService = tokenService;
         }
 
         public bool IsUniqueUser(string email)
@@ -51,7 +50,7 @@ namespace WebApplication1.Services
             }
 
             
-            var token = GenerateToken(user);
+            var token = _tokenService.GenerateToken(user);
 
             AuthorizationResponseDTO loginResponseDTO = new AuthorizationResponseDTO()
             {
@@ -60,23 +59,16 @@ namespace WebApplication1.Services
             return loginResponseDTO;
         }
 
-        public async Task Logout(string token)
+        public Task Logout(string token)
         {
             if (string.IsNullOrEmpty(token))
             {
                 throw new UnauthorizedAccessException();
             }
 
-            blacklistedTokens.Add(token);
+            return Task.CompletedTask;
         }
 
-        public bool IsTokenBlacklisted(string token)
-        {
-            System.Diagnostics.Debug.WriteLine("JWt is blacklisted = " + token);
-            System.Diagnostics.Debug.WriteLine(blacklistedTokens.Count());
-
-            return blacklistedTokens.Contains(token);
-        }
 
         public async Task<AuthorizationResponseDTO> Register(RegistrationRequestDTO registrationRequestDTO)
         {
@@ -92,6 +84,7 @@ namespace WebApplication1.Services
                 email = registrationRequestDTO.Email,
                 password = BCrypt.Net.BCrypt.HashPassword(registrationRequestDTO.Password),
                 birthDate = registrationRequestDTO.BirthDate,
+                createTime = DateTime.UtcNow,
                 gender = registrationRequestDTO.Gender,
                 phoneNumber = registrationRequestDTO.PhoneNumber
             };
@@ -101,7 +94,7 @@ namespace WebApplication1.Services
 
             user.password = "";
 
-            var token = GenerateToken(user);
+            var token = _tokenService.GenerateToken(user);
             AuthorizationResponseDTO loginResponseDTO = new AuthorizationResponseDTO()
             {
                 Token = token,
@@ -111,25 +104,35 @@ namespace WebApplication1.Services
 
         }
 
-        public String GenerateToken (User user)
+        public async Task<ProfileResponseDTO> GetProfile(string token)
         {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(secretKey);
+            string id = _tokenService.GetUserId(token);
 
-            var tokenDescriptor = new SecurityTokenDescriptor()
+            if (!string.IsNullOrEmpty(id))
             {
-                Subject = new ClaimsIdentity(new Claim[]
+                var user = await _db.Users.FirstOrDefaultAsync(user => user.Id.ToString() == id);
+
+                if (user != null)
                 {
-                    new Claim(ClaimTypes.Name, user.Id.ToString())
+                    ProfileResponseDTO profileResponseDTO = new ProfileResponseDTO()
+                    {
+                        id = user.Id,
+                        birthDate = user.birthDate,
+                        gender = user.gender,
+                        phoneNumber = user.phoneNumber,
+                        fullName = user.fullName,
+                        email = user.email,
+                        createTime = user.createTime
+                    };
 
-                }),
-                Expires = DateTime.UtcNow.AddHours(1),
-                SigningCredentials = new(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-            };
+                    return profileResponseDTO;
+                }
+                else throw new NotFoundException("User not found.");
+            }
 
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-
-            return tokenHandler.WriteToken(token);
+            throw new UnauthorizedAccessException();   
         }
+
+        
     }
 }

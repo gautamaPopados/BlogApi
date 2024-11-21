@@ -28,6 +28,5 @@ namespace WebApplication1.Data.DTO
         [Required(AllowEmptyStrings = false, ErrorMessage = "The PhoneNumber field is required.")]
         [RegularExpression(@"^\+7\d{10}$", ErrorMessage = "The PhoneNumber field is not a valid phone number.")]
         public string PhoneNumber { get; set; }
-
     }
 }

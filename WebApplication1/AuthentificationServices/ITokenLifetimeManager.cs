@@ -1,6 +1,6 @@
 ﻿using Microsoft.IdentityModel.Tokens;
 
-namespace WebApplication1.Validators
+namespace WebApplication1.AuthentificationServices
 {
     public interface ITokenLifetimeManager
     {
