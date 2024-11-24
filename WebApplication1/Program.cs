@@ -1,4 +1,3 @@
-using ConsoleApp1.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -9,6 +8,7 @@ using WebApplication1.Services;
 using WebApplication1.Services.IServices;
 using Microsoft.AspNetCore.Authorization;
 using WebApplication1.AuthentificationServices;
+using WebApplication1.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 var tokenLifetimeManager = new JwtTokenLifetimeManager();
@@ -112,6 +112,8 @@ builder.Services.AddControllersWithViews()
     .AddViewLocalization()
     .AddDataAnnotationsLocalization();
 var app = builder.Build();
+
+DatabaseInitilaizer.Seed(app);
 
 using var serviceScope = app.Services.CreateScope();
 var dbContext = serviceScope.ServiceProvider.GetService<AppDbContext>();

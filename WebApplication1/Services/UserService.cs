@@ -1,6 +1,4 @@
-﻿using ConsoleApp1.Data;
-using ConsoleApp1.Data.Entities;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
@@ -8,7 +6,9 @@ using System.Net;
 using System.Security.Claims;
 using System.Text;
 using WebApplication1.AuthentificationServices;
+using WebApplication1.Data;
 using WebApplication1.Data.DTO;
+using WebApplication1.Data.Entities;
 using WebApplication1.Exceptions;
 using WebApplication1.Services.IServices;
 
