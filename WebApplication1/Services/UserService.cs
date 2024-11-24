@@ -27,7 +27,7 @@ namespace WebApplication1.Services
 
         public bool IsUniqueUser(string email)
         {
-            var user = _db.Users.FirstOrDefault(x => x.email == email);
+            var user = _db.Users.FirstOrDefault(x => x.Email == email);
             
             if (user == null)
             {
@@ -36,15 +36,15 @@ namespace WebApplication1.Services
             return false;
         }
 
-        public async Task<AuthorizationResponseDTO> Login(LoginRequestDTO loginRequestDTO)
+        public async Task<TokenResponse> Login(LoginCredentials loginRequestDTO)
         {
-            var user = _db.Users.FirstOrDefault(u => u.email == loginRequestDTO.Email);
+            var user = _db.Users.FirstOrDefault(u => u.Email == loginRequestDTO.Email);
 
             if (user == null)
             {
                 throw new BadRequestException("email or password is incorrect");
             }
-            else if (!BCrypt.Net.BCrypt.Verify(loginRequestDTO.Password, user.password))
+            else if (!BCrypt.Net.BCrypt.Verify(loginRequestDTO.Password, user.Password))
             {
                 throw new BadRequestException("email or password is incorrect");
             }
@@ -52,7 +52,7 @@ namespace WebApplication1.Services
             
             var token = _tokenService.GenerateToken(user);
 
-            AuthorizationResponseDTO loginResponseDTO = new AuthorizationResponseDTO()
+            TokenResponse loginResponseDTO = new TokenResponse()
             {
                 Token = token,
             };
@@ -70,7 +70,7 @@ namespace WebApplication1.Services
         }
 
 
-        public async Task<AuthorizationResponseDTO> Register(RegistrationRequestDTO registrationRequestDTO)
+        public async Task<TokenResponse> Register(UserRegistrationModel registrationRequestDTO)
         {
 
             if (!IsUniqueUser(registrationRequestDTO.Email))
@@ -80,22 +80,22 @@ namespace WebApplication1.Services
 
             User user = new User()
             {
-                fullName = registrationRequestDTO.FullName,
-                email = registrationRequestDTO.Email,
-                password = BCrypt.Net.BCrypt.HashPassword(registrationRequestDTO.Password),
-                birthDate = registrationRequestDTO.BirthDate,
-                createTime = DateTime.UtcNow,
-                gender = registrationRequestDTO.Gender,
-                phoneNumber = registrationRequestDTO.PhoneNumber
+                FullName = registrationRequestDTO.FullName,
+                Email = registrationRequestDTO.Email,
+                Password = BCrypt.Net.BCrypt.HashPassword(registrationRequestDTO.Password),
+                BirthDate = registrationRequestDTO.BirthDate,
+                CreateTime = DateTime.UtcNow,
+                Gender = registrationRequestDTO.Gender,
+                PhoneNumber = registrationRequestDTO.PhoneNumber
             };
 
             _db.Users.Add(user);
             await _db.SaveChangesAsync();
 
-            user.password = "";
+            user.Password = "";
 
             var token = _tokenService.GenerateToken(user);
-            AuthorizationResponseDTO loginResponseDTO = new AuthorizationResponseDTO()
+            TokenResponse loginResponseDTO = new TokenResponse()
             {
                 Token = token,
             };
@@ -104,7 +104,7 @@ namespace WebApplication1.Services
 
         }
 
-        public async Task<ProfileResponseDTO> GetProfile(string token)
+        public async Task<UserDto> GetProfile(string token)
         {
             string id = _tokenService.GetUserId(token);
 
@@ -114,15 +114,15 @@ namespace WebApplication1.Services
 
                 if (user != null)
                 {
-                    ProfileResponseDTO profileResponseDTO = new ProfileResponseDTO()
+                    UserDto profileResponseDTO = new UserDto()
                     {
                         id = user.Id,
-                        birthDate = user.birthDate,
-                        gender = user.gender,
-                        phoneNumber = user.phoneNumber,
-                        fullName = user.fullName,
-                        email = user.email,
-                        createTime = user.createTime
+                        birthDate = user.BirthDate,
+                        gender = user.Gender,
+                        phoneNumber = user.PhoneNumber,
+                        fullName = user.FullName,
+                        email = user.Email,
+                        createTime = user.CreateTime
                     };
 
                     return profileResponseDTO;

@@ -32,12 +32,12 @@ namespace WebApplication1.Controllers
         /// Log in to the system
         /// </summary>
         
-        [ProducesResponseType(typeof(AuthorizationResponseDTO), 200)]
+        [ProducesResponseType(typeof(TokenResponse), 200)]
         [ProducesResponseType(typeof(ExceptionResponse), 400)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
         [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequestDTO model)
+        public async Task<IActionResult> Login([FromBody] LoginCredentials model)
         {
             var loginResponse = await _userService.Login(model);
 
@@ -47,12 +47,12 @@ namespace WebApplication1.Controllers
         /// <summary>
         /// Register new user
         /// </summary>
-        [ProducesResponseType(typeof(AuthorizationResponseDTO), 200)]
+        [ProducesResponseType(typeof(TokenResponse), 200)]
         [ProducesResponseType(typeof(ExceptionResponse), 400)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
         [AllowAnonymous]
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegistrationRequestDTO model)
+        public async Task<IActionResult> Register([FromBody] UserRegistrationModel model)
         {
             var RegisterResponse = await _userService.Register(model);
 
@@ -84,19 +84,19 @@ namespace WebApplication1.Controllers
         /// <summary>
         /// Get user profile
         /// </summary>
-        [ProducesResponseType(typeof(ProfileResponseDTO), 200)]
+        [ProducesResponseType(typeof(UserDto), 200)]
         [ProducesResponseType(typeof(ExceptionResponse), 400)]
         [ProducesResponseType(typeof(ExceptionResponse), 401)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
         [Authorize]
         [HttpGet("profile")]
-        public async Task<ActionResult<ProfileResponseDTO>> GetProfile()
+        public async Task<ActionResult<UserDto>> GetProfile()
         {
             var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
 
              var profileResponse = await _userService.GetProfile(token);
 
-            return profileResponse;
+            return Ok(profileResponse);
         }
 
         

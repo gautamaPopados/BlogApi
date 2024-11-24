@@ -9,21 +9,21 @@ namespace WebApplication1.Data.Entities
     {
         public Guid Id { get; set; }
 
-        public string fullName { get; set; }
+        public string FullName { get; set; }
 
-        public string email { get; set; }
+        public string Email { get; set; }
 
-        public string phoneNumber { get; set; }
-
-        [DataType(DataType.Date)]
-        public DateTime? birthDate { get; set; }
+        public string PhoneNumber { get; set; }
 
         [DataType(DataType.Date)]
-        public DateTime createTime { get; set; }
+        public DateTime? BirthDate { get; set; }
+
+        [DataType(DataType.Date)]
+        public DateTime CreateTime { get; set; }
 
         [DataType(DataType.Password)]
-        public string password { get; set; }
-        public Gender gender { get; set; }
+        public string Password { get; set; }
+        public Gender Gender { get; set; }
 
         public List<Community> Communities { get; set; } = new List<Community>();
         public List<CommunityUser> CommunityUsers { get; set; } = new List<CommunityUser>();

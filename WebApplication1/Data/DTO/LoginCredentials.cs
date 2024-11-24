@@ -2,7 +2,7 @@
 
 namespace WebApplication1.Data.DTO
 {
-    public class LoginRequestDTO
+    public class LoginCredentials
     {
         [Required(ErrorMessage = "Email is required.")]
         public string Email { get; set; }

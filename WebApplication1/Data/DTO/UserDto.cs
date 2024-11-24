@@ -3,7 +3,7 @@ using WebApplication1.Data.Enums;
 
 namespace WebApplication1.Data.DTO
 {
-    public class ProfileResponseDTO
+    public class UserDto
     {
         public Guid id { get; set; }
 

@@ -5,8 +5,8 @@ namespace WebApplication1.Services.IServices;
 public interface IUserService
 {
     bool IsUniqueUser(string email);
-    Task<AuthorizationResponseDTO> Login(LoginRequestDTO loginRequestDTO);
-    Task<AuthorizationResponseDTO> Register(RegistrationRequestDTO registrationRequestDTO);
+    Task<TokenResponse> Login(LoginCredentials loginRequestDTO);
+    Task<TokenResponse> Register(UserRegistrationModel registrationRequestDTO);
     Task Logout(string token);
-    Task<ProfileResponseDTO> GetProfile(string token);
+    Task<UserDto> GetProfile(string token);
 }

@@ -2,7 +2,7 @@
 
 namespace WebApplication1.Data.DTO
 {
-    public class EditProfileRequestDTO
+    public class UserEditModel
     {
 
         public string fullName { get; set; }

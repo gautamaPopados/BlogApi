@@ -5,7 +5,7 @@ using WebApplication1.Validators;
 
 namespace WebApplication1.Data.DTO
 {
-    public class RegistrationRequestDTO
+    public class UserRegistrationModel
     {
         [Required(AllowEmptyStrings = false ,ErrorMessage = "The FullName field is required.")]
         public string FullName { get; set; }
