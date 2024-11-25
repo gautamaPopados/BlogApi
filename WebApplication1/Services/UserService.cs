@@ -1,10 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.Globalization;
-using System.IdentityModel.Tokens.Jwt;
-using System.Net;
-using System.Security.Claims;
-using System.Text;
 using WebApplication1.AuthentificationServices;
 using WebApplication1.Data;
 using WebApplication1.Data.DTO;
@@ -95,6 +89,7 @@ namespace WebApplication1.Services
             user.Password = "";
 
             var token = _tokenService.GenerateToken(user);
+
             TokenResponse loginResponseDTO = new TokenResponse()
             {
                 Token = token,

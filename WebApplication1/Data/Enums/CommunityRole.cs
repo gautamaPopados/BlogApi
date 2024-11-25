@@ -5,7 +5,7 @@ namespace WebApplication1.Data.Enums
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum CommunityRole
     {
-        Administrator,
-        Subscriber
+        Subscriber,
+        Administrator
     }
 }

@@ -12,16 +12,19 @@ using WebApplication1.Data.DTO;
 using WebApplication1.Data.Entities;
 using WebApplication1.Exceptions;
 using WebApplication1.Services.IServices;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace WebApplication1.Services
 {
     public class CommunityService : ICommunityService
     {
         private readonly AppDbContext _db;
+        private readonly TokenService _tokenService;
 
-        public CommunityService(AppDbContext db, IConfiguration configuration)
+        public CommunityService(AppDbContext db, IConfiguration configuration, TokenService tokenService)
         {
             _db = db;
+            _tokenService = tokenService;
         }
 
         public async Task<List<CommunityDto>> GetCommunities()
@@ -84,8 +87,67 @@ namespace WebApplication1.Services
                     administrators = adminsDtos
                 };
             }
-            else { throw new NotFoundException($"Community with id={id} not found in  database"); }
+            else throw new NotFoundException($"Community with id={id} not found in  database");
 
+        }
+
+        public async Task SubscribeUser(string token, Guid id)
+        {
+            string userId = _tokenService.GetUserId(token);
+            var user = await _db.Users.Include(user => user.CommunityUsers).FirstOrDefaultAsync(user => user.Id.ToString() == userId);
+
+            if (user == null)
+            {
+                throw new NotFoundException("User not found");
+            }
+
+            var community = await _db.Communities.FirstOrDefaultAsync(c => c.Id == id);
+
+            if (community == null)
+            {
+                throw new NotFoundException($"Community with id={id} not found in  database.");
+            }
+
+            if (user.CommunityUsers.Exists(cu => cu.UserId == user.Id && cu.CommunityId == id))
+            {
+                throw new BadRequestException($"User with id={userId} already subscribed to the community with id={id}");
+            }
+
+            community.CommunityUsers.Add(
+                new CommunityUser()
+                {
+                    User = user,
+                    Community = community,
+                    Role = Data.Enums.CommunityRole.Subscriber
+                });
+
+            await _db.SaveChangesAsync();
+
+            return;
+        }
+        public async Task<List<CommunityUserDto>> GetUserCommunities(string token)
+        {
+            string userId = _tokenService.GetUserId(token);
+
+            var user = await _db.Users.Include(user => user.CommunityUsers).FirstOrDefaultAsync(user => user.Id.ToString() == userId);
+
+            if (user == null)
+            {
+                throw new NotFoundException("User not found.");
+            }
+
+            var cuList = user.CommunityUsers
+                .GroupBy(cu => cu.CommunityId)
+                .Select(g => g.OrderByDescending(cu => cu.Role)
+                               .FirstOrDefault()) 
+                .Select(cu => new CommunityUserDto
+                {
+                    userId = cu.UserId,
+                    communityId = cu.CommunityId,
+                    role = cu.Role
+                })
+                .ToList();
+            return cuList;
         }
     }
 }

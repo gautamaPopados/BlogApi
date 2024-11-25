@@ -8,6 +8,7 @@ using WebApplication1.AuthentificationServices;
 using WebApplication1.Data.DTO;
 using WebApplication1.Exceptions;
 using WebApplication1.Middleware;
+using WebApplication1.Services;
 using WebApplication1.Services.IServices;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -41,6 +42,9 @@ namespace WebApplication1.Controllers
             return Ok(communities);
         }
 
+        [ProducesResponseType(typeof(CommunityFullDto), 200)]
+        [ProducesResponseType(typeof(ExceptionResponse), 404)]
+        [ProducesResponseType(typeof(ExceptionResponse), 500)]
         [AllowAnonymous]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetCommunityById(Guid id)
@@ -50,5 +54,37 @@ namespace WebApplication1.Controllers
             return Ok(community);
         }
 
+        /// <summary>
+        /// Subscribe a user to the community
+        /// </summary>
+        [ProducesResponseType(200)]
+        [ProducesResponseType(typeof(ExceptionResponse), 400)]
+        [ProducesResponseType(typeof(ExceptionResponse), 401)]
+        [ProducesResponseType(typeof(ExceptionResponse), 404)]
+        [ProducesResponseType(typeof(ExceptionResponse), 500)]
+        [Authorize]
+        [HttpGet("{id}/subscribe")]
+        public async Task<ActionResult> Subscribe(Guid id)
+        {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
+            await _communityService.SubscribeUser(token, id);
+
+            return Ok();
+        }
+
+        [ProducesResponseType(typeof(CommunityFullDto), 200)]
+        [ProducesResponseType(typeof(ExceptionResponse), 404)]
+        [ProducesResponseType(typeof(ExceptionResponse), 500)]
+        [AllowAnonymous]
+        [HttpGet("my")]
+        public async Task<IActionResult> GetUserCommunities()
+        {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
+            var communities = await _communityService.GetUserCommunities(token);
+
+            return Ok(communities);
+        }
     }
 }

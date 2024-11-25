@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace WebApplication1.Migrations
 {
     /// <inheritdoc />
-    public partial class community : Migration
+    public partial class ciId : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -49,13 +49,14 @@ namespace WebApplication1.Migrations
                 name: "CommunityUser",
                 columns: table => new
                 {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     CommunityId = table.Column<Guid>(type: "uuid", nullable: false),
                     Role = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CommunityUser", x => new { x.CommunityId, x.UserId });
+                    table.PrimaryKey("PK_CommunityUser", x => x.Id);
                     table.ForeignKey(
                         name: "FK_CommunityUser_Communities_CommunityId",
                         column: x => x.CommunityId,
@@ -69,6 +70,11 @@ namespace WebApplication1.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CommunityUser_CommunityId",
+                table: "CommunityUser",
+                column: "CommunityId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CommunityUser_UserId",

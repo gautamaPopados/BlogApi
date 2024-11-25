@@ -51,16 +51,22 @@ namespace WebApplication1.Migrations
 
             modelBuilder.Entity("WebApplication1.Data.Entities.CommunityUser", b =>
                 {
-                    b.Property<Guid>("CommunityId")
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid>("CommunityId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Role")
                         .HasColumnType("integer");
 
-                    b.HasKey("CommunityId", "UserId");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CommunityId");
 
                     b.HasIndex("UserId");
 

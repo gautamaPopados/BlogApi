@@ -12,8 +12,8 @@ using WebApplication1.Data;
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20241124221454_community")]
-    partial class community
+    [Migration("20241125165542_ciId")]
+    partial class ciId
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -54,16 +54,22 @@ namespace WebApplication1.Migrations
 
             modelBuilder.Entity("WebApplication1.Data.Entities.CommunityUser", b =>
                 {
-                    b.Property<Guid>("CommunityId")
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid>("CommunityId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Role")
                         .HasColumnType("integer");
 
-                    b.HasKey("CommunityId", "UserId");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CommunityId");
 
                     b.HasIndex("UserId");
 

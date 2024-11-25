@@ -20,7 +20,7 @@ namespace WebApplication1.Data
                    j => j.HasOne(pt => pt.Community).WithMany(p => p.CommunityUsers).HasForeignKey(pt => pt.CommunityId),
                    j =>
                    {
-                       j.HasKey(t => new { t.CommunityId, t.UserId });
+                       j.HasKey(t => new { t.Id });
                        j.ToTable("CommunityUser");
                    });
         }
