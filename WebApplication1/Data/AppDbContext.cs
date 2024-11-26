@@ -9,6 +9,8 @@ namespace WebApplication1.Data
         public DbSet<User> Users { set; get; }
         public DbSet<Community> Communities { set; get; }
 
+        public DbSet<Tag> Tags { set; get; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder

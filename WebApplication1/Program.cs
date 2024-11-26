@@ -9,6 +9,7 @@ using WebApplication1.Services.IServices;
 using Microsoft.AspNetCore.Authorization;
 using WebApplication1.AuthentificationServices;
 using WebApplication1.Data;
+using Microsoft.AspNetCore.Mvc.Formatters;
 
 var builder = WebApplication.CreateBuilder(args);
 var tokenLifetimeManager = new JwtTokenLifetimeManager();
@@ -16,6 +17,7 @@ var tokenLifetimeManager = new JwtTokenLifetimeManager();
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICommunityService, CommunityService>();
+builder.Services.AddScoped<ITagService, TagService>();
 
 builder.Services.AddSingleton<ITokenLifetimeManager>(tokenLifetimeManager);
 builder.Services.AddSingleton<TokenService>();
@@ -66,6 +68,11 @@ builder.Services.AddAuthentication(options =>
     });
 
 builder.Services.AddControllers();
+builder.Services.AddControllers(opt =>  
+{
+    opt.OutputFormatters.RemoveType<HttpNoContentOutputFormatter>();
+});
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>

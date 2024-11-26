@@ -32,13 +32,13 @@ namespace WebApplication1.Services
 
         public async Task<TokenResponse> Login(LoginCredentials loginRequestDTO)
         {
-            var user = _db.Users.FirstOrDefault(u => u.Email == loginRequestDTO.Email);
+            var user = _db.Users.FirstOrDefault(u => u.Email == loginRequestDTO.email);
 
             if (user == null)
             {
                 throw new BadRequestException("email or password is incorrect");
             }
-            else if (!BCrypt.Net.BCrypt.Verify(loginRequestDTO.Password, user.Password))
+            else if (!BCrypt.Net.BCrypt.Verify(loginRequestDTO.password, user.Password))
             {
                 throw new BadRequestException("email or password is incorrect");
             }
@@ -48,7 +48,7 @@ namespace WebApplication1.Services
 
             TokenResponse loginResponseDTO = new TokenResponse()
             {
-                Token = token,
+                token = token,
             };
             return loginResponseDTO;
         }
@@ -67,20 +67,20 @@ namespace WebApplication1.Services
         public async Task<TokenResponse> Register(UserRegistrationModel registrationRequestDTO)
         {
 
-            if (!IsUniqueUser(registrationRequestDTO.Email))
+            if (!IsUniqueUser(registrationRequestDTO.email))
             {
-                throw new BadRequestException($"Username '{registrationRequestDTO.Email}' is already taken.");
+                throw new BadRequestException($"Username '{registrationRequestDTO.email}' is already taken.");
             }
 
             User user = new User()
             {
-                FullName = registrationRequestDTO.FullName,
-                Email = registrationRequestDTO.Email,
-                Password = BCrypt.Net.BCrypt.HashPassword(registrationRequestDTO.Password),
-                BirthDate = registrationRequestDTO.BirthDate,
+                FullName = registrationRequestDTO.fullName,
+                Email = registrationRequestDTO.email,
+                Password = BCrypt.Net.BCrypt.HashPassword(registrationRequestDTO.password),
+                BirthDate = registrationRequestDTO.birthDate,
                 CreateTime = DateTime.UtcNow,
-                Gender = registrationRequestDTO.Gender,
-                PhoneNumber = registrationRequestDTO.PhoneNumber
+                Gender = registrationRequestDTO.gender,
+                PhoneNumber = registrationRequestDTO.phoneNumber
             };
 
             _db.Users.Add(user);
@@ -92,7 +92,7 @@ namespace WebApplication1.Services
 
             TokenResponse loginResponseDTO = new TokenResponse()
             {
-                Token = token,
+                token = token,
             };
 
             return loginResponseDTO;

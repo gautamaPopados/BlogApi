@@ -2,10 +2,12 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Filters;
+using System.Diagnostics.CodeAnalysis;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using WebApplication1.AuthentificationServices;
 using WebApplication1.Data.DTO;
+using WebApplication1.Data.Enums;
 using WebApplication1.Exceptions;
 using WebApplication1.Middleware;
 using WebApplication1.Services;
@@ -42,6 +44,9 @@ namespace WebApplication1.Controllers
             return Ok(communities);
         }
 
+        /// <summary>
+        /// Get information about community
+        /// </summary>
         [ProducesResponseType(typeof(CommunityFullDto), 200)]
         [ProducesResponseType(typeof(ExceptionResponse), 404)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
@@ -63,7 +68,7 @@ namespace WebApplication1.Controllers
         [ProducesResponseType(typeof(ExceptionResponse), 404)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
         [Authorize]
-        [HttpGet("{id}/subscribe")]
+        [HttpPost("{id}/subscribe")]
         public async Task<ActionResult> Subscribe(Guid id)
         {
             var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
@@ -73,10 +78,50 @@ namespace WebApplication1.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Get the greatest user's role in the community (or null if the user is not a member of the community)
+        /// </summary>
+        [ProducesResponseType(typeof(CommunityRole),200)]
+        [ProducesResponseType(typeof(ExceptionResponse), 401)]
+        [ProducesResponseType(typeof(ExceptionResponse), 404)]
+        [ProducesResponseType(typeof(ExceptionResponse), 500)]
+        [Authorize]
+        [HttpGet("{id}/role")]
+        public async Task<ActionResult> GetGreatestRole(Guid id)
+        {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
+            var role = await _communityService.GetGreatestRole(token, id);
+            if (role == null)
+                return Ok(null);
+            return Ok(role);
+        }
+        /// <summary>
+        /// Unsubscribe a user from the community
+        /// </summary>
+        [ProducesResponseType(200)]
+        [ProducesResponseType(typeof(ExceptionResponse), 400)]
+        [ProducesResponseType(typeof(ExceptionResponse), 401)]
+        [ProducesResponseType(typeof(ExceptionResponse), 404)]
+        [ProducesResponseType(typeof(ExceptionResponse), 500)]
+        [Authorize]
+        [HttpDelete("{id}/unsubscribe")]
+        public async Task<ActionResult> Unsubscribe(Guid id)
+        {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
+            await _communityService.UnsubscribeUser(token, id);
+
+            return Ok();
+        }
+
+        /// <summary>
+        /// Get user's community list (with the greatest user's role in the community)
+        /// </summary>
         [ProducesResponseType(typeof(CommunityFullDto), 200)]
         [ProducesResponseType(typeof(ExceptionResponse), 404)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [AllowAnonymous]
+        [Authorize]
         [HttpGet("my")]
         public async Task<IActionResult> GetUserCommunities()
         {

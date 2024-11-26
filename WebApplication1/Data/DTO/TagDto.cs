@@ -2,15 +2,11 @@
 
 namespace WebApplication1.Data.DTO
 {
-    public class CommunityDto
+    public class TagDto
     {
         public Guid id { get; set; }
-
-        [DataType(DataType.Date)]
         public DateTime createTime { get; set; }
+        [MinLength(1)]
         public string name { get; set; }
-        public string? description { get; set; }
-        public bool isClosed { get; set; }
-        public int subscribersCount { get; set; }
     }
 }

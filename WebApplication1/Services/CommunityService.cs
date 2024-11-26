@@ -10,6 +10,7 @@ using WebApplication1.AuthentificationServices;
 using WebApplication1.Data;
 using WebApplication1.Data.DTO;
 using WebApplication1.Data.Entities;
+using WebApplication1.Data.Enums;
 using WebApplication1.Exceptions;
 using WebApplication1.Services.IServices;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -36,12 +37,12 @@ namespace WebApplication1.Services
             {
                 var newDto = new CommunityDto()
                 {
-                    Id = community.Id,
-                    Name = community.Name,
-                    CreateTime = community.CreateTime,
-                    IsClosed = community.IsClosed,
-                    Description = community.Description,
-                    SubscribersCount = community.SubscribersCount
+                    id = community.Id,
+                    name = community.Name,
+                    createTime = community.CreateTime,
+                    isClosed = community.IsClosed,
+                    description = community.Description,
+                    subscribersCount = community.SubscribersCount
                 };
 
                 communityDtos.Add(newDto);
@@ -98,7 +99,7 @@ namespace WebApplication1.Services
 
             if (user == null)
             {
-                throw new NotFoundException("User not found");
+                throw new UnauthorizedAccessException($"User with id={userId} not found in database.");
             }
 
             var community = await _db.Communities.FirstOrDefaultAsync(c => c.Id == id);
@@ -120,6 +121,38 @@ namespace WebApplication1.Services
                     Community = community,
                     Role = Data.Enums.CommunityRole.Subscriber
                 });
+            community.SubscribersCount++;
+
+            await _db.SaveChangesAsync();
+
+            return;
+        }
+        public async Task UnsubscribeUser(string token, Guid id)
+        {
+            string userId = _tokenService.GetUserId(token);
+            var user = await _db.Users.Include(user => user.CommunityUsers).FirstOrDefaultAsync(user => user.Id.ToString() == userId);
+
+            if (user == null)
+            {
+                throw new UnauthorizedAccessException($"User with id={userId} not found in database.");
+            }
+
+            var community = await _db.Communities.FirstOrDefaultAsync(c => c.Id == id);
+
+            if (community == null)
+            {
+                throw new NotFoundException($"Community with id={id} not found in database.");
+            }
+
+            var communityUser = user.CommunityUsers.FirstOrDefault(cu => cu.UserId == user.Id && cu.CommunityId == id && cu.Role == Data.Enums.CommunityRole.Subscriber);
+
+            if (communityUser == null)
+            {
+                throw new BadRequestException($"User with id={userId} is not subscribed to the community with id={id}");
+            }
+
+            community.CommunityUsers.Remove(communityUser);
+            community.SubscribersCount--;
 
             await _db.SaveChangesAsync();
 
@@ -138,8 +171,7 @@ namespace WebApplication1.Services
 
             var cuList = user.CommunityUsers
                 .GroupBy(cu => cu.CommunityId)
-                .Select(g => g.OrderByDescending(cu => cu.Role)
-                               .FirstOrDefault()) 
+                .Select(g => g.OrderByDescending(cu => cu.Role).FirstOrDefault()) 
                 .Select(cu => new CommunityUserDto
                 {
                     userId = cu.UserId,
@@ -147,7 +179,40 @@ namespace WebApplication1.Services
                     role = cu.Role
                 })
                 .ToList();
+
             return cuList;
+        }
+
+        public async Task<CommunityRole?> GetGreatestRole(string token, Guid id)
+        {
+            string userId = _tokenService.GetUserId(token);
+            var user = await _db.Users.Include(user => user.CommunityUsers).FirstOrDefaultAsync(user => user.Id.ToString() == userId);
+
+            if (user == null)
+            {
+                throw new UnauthorizedAccessException($"User with id={userId} not found in database.");
+            }
+
+            var community = await _db.Communities.FirstOrDefaultAsync(c => c.Id == id);
+
+            if (community == null)
+            {
+                throw new NotFoundException($"Community with id={id} not found in database.");
+            }
+
+            var communityUser = user.CommunityUsers
+                .GroupBy(cu => cu.CommunityId)
+                .Select(g => g.OrderByDescending(cu => cu.Role)
+                               .FirstOrDefault()).FirstOrDefault();
+
+            if (communityUser == null)
+            {
+                return null;
+            }
+            else
+            {
+                return communityUser.Role;
+            }
         }
     }
 }

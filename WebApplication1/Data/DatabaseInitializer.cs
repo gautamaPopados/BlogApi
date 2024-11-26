@@ -41,6 +41,45 @@ namespace WebApplication1.Data
                     context.Communities.AddRange(communitiesToAdd);
                     context.SaveChanges();
                 }
+                if (!context.Tags.Any())
+                {
+                    var tagsToAdd = new List<Tag>
+                    {
+                        new Tag
+                        {
+                            CreateTime = DateTime.UtcNow,
+                            Name = "история",
+                        },
+                        new Tag
+                        {
+                            CreateTime = DateTime.UtcNow,
+                            Name = "еда",
+                        },
+                        new Tag
+                        {
+                            CreateTime = DateTime.UtcNow,
+                            Name = "18+",
+                        },
+                        new Tag
+                        {
+                            CreateTime = DateTime.UtcNow,
+                            Name = "приколы",
+                        },
+                        new Tag
+                        {
+                            CreateTime = DateTime.UtcNow,
+                            Name = "it",
+                        },
+                        new Tag
+                        {
+                            CreateTime = DateTime.UtcNow,
+                            Name = "интернет",
+                        }
+                    };
+
+                    context.Tags.AddRange(tagsToAdd);
+                    context.SaveChanges();
+                }
             }
         }
     }
