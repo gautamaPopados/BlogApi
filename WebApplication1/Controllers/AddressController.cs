@@ -20,12 +20,12 @@ namespace WebApplication1.Controllers
     [ApiController]
     public class AddressController : Controller
     {
-        private readonly ICommunityService _communityService;
+        private readonly IAddressService _addressService;
         private readonly ILogger<AddressController> _logger;
 
-        public AddressController(ICommunityService communityService, ILogger<AddressController> logger, ITokenLifetimeManager lifetimeManager)
+        public AddressController(IAddressService addressService, ILogger<AddressController> logger)
         {
-            _communityService = communityService;
+            _addressService = addressService;
             _logger = logger;
         }
 
@@ -33,103 +33,16 @@ namespace WebApplication1.Controllers
         /// Search in GAR
         /// </summary>
         
-        [ProducesResponseType(typeof(List<CommunityDto>), 200)]
+        [ProducesResponseType(typeof(List<SearchAddressModel>), 200)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
         [AllowAnonymous]
         [HttpGet("search")]
-        public async Task<IActionResult> GetCommunityList()
+        public async Task<IActionResult> Search(Int64 parentObjectId, string? query)
         {
-            var communities = await _communityService.GetCommunities();
+            var seacrhModels = await _addressService.Search(parentObjectId, query);
 
-            return Ok(communities);
+            return Ok(seacrhModels);
         }
 
-        /// <summary>
-        /// Get information about community
-        /// </summary>
-        [ProducesResponseType(typeof(CommunityFullDto), 200)]
-        [ProducesResponseType(typeof(ExceptionResponse), 404)]
-        [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [AllowAnonymous]
-        [HttpGet("chain")]
-        public async Task<IActionResult> GetCommunityById(Guid id)
-        {
-            var community = await _communityService.GetCommunityById(id);
-
-            return Ok(community);
-        }
-
-        /// <summary>
-        /// Subscribe a user to the community
-        /// </summary>
-        [ProducesResponseType(200)]
-        [ProducesResponseType(typeof(ExceptionResponse), 400)]
-        [ProducesResponseType(typeof(ExceptionResponse), 401)]
-        [ProducesResponseType(typeof(ExceptionResponse), 404)]
-        [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [Authorize]
-        [HttpPost("{id}/subscribe")]
-        public async Task<ActionResult> Subscribe(Guid id)
-        {
-            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-
-            await _communityService.SubscribeUser(token, id);
-
-            return Ok();
-        }
-
-        /// <summary>
-        /// Get the greatest user's role in the community (or null if the user is not a member of the community)
-        /// </summary>
-        [ProducesResponseType(typeof(CommunityRole),200)]
-        [ProducesResponseType(typeof(ExceptionResponse), 401)]
-        [ProducesResponseType(typeof(ExceptionResponse), 404)]
-        [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [Authorize]
-        [HttpGet("{id}/role")]
-        public async Task<ActionResult> GetGreatestRole(Guid id)
-        {
-            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-
-            var role = await _communityService.GetGreatestRole(token, id);
-            if (role == null)
-                return Ok(null);
-            return Ok(role);
-        }
-        /// <summary>
-        /// Unsubscribe a user from the community
-        /// </summary>
-        [ProducesResponseType(200)]
-        [ProducesResponseType(typeof(ExceptionResponse), 400)]
-        [ProducesResponseType(typeof(ExceptionResponse), 401)]
-        [ProducesResponseType(typeof(ExceptionResponse), 404)]
-        [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [Authorize]
-        [HttpDelete("{id}/unsubscribe")]
-        public async Task<ActionResult> Unsubscribe(Guid id)
-        {
-            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-
-            await _communityService.UnsubscribeUser(token, id);
-
-            return Ok();
-        }
-
-        /// <summary>
-        /// Get user's community list (with the greatest user's role in the community)
-        /// </summary>
-        [ProducesResponseType(typeof(CommunityFullDto), 200)]
-        [ProducesResponseType(typeof(ExceptionResponse), 404)]
-        [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [Authorize]
-        [HttpGet("my")]
-        public async Task<IActionResult> GetUserCommunities()
-        {
-            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-
-            var communities = await _communityService.GetUserCommunities(token);
-
-            return Ok(communities);
-        }
     }
 }

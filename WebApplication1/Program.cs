@@ -15,9 +15,11 @@ var builder = WebApplication.CreateBuilder(args);
 var tokenLifetimeManager = new JwtTokenLifetimeManager();
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<AddressContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("AddressConnection")));
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICommunityService, CommunityService>();
 builder.Services.AddScoped<ITagService, TagService>();
+builder.Services.AddScoped<IAddressService, AddressService>();
 
 builder.Services.AddSingleton<ITokenLifetimeManager>(tokenLifetimeManager);
 builder.Services.AddSingleton<TokenService>();

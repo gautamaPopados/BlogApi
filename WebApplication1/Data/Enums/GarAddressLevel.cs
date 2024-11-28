@@ -18,6 +18,7 @@
         IntracityLevel, 
         AdditionalTerritoriesLevel, 
         LevelOfObjectsInAdditionalTerritories, 
-        CarPlace
+        CarPlace,
+        Unknown
     }
 }

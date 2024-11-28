@@ -2,14 +2,14 @@
 {
     public class House
     {
-        public long Id { get; set; }
-        public long Objectid { get; set; }
-        public Guid Objectguid { get; set; }
-        public string Housenum { get; set; }
-        public string? Addnum1 { get; set; }
-        public string? Addnum2 { get; set; }
-        public int? Addtype1 { get; set; }
-        public int? Addtype2 { get; set; }
-        public int Isactive { get; set; }
+        public long id { get; set; }
+        public long objectid { get; set; }
+        public Guid objectguid { get; set; }
+        public string housenum { get; set; }
+        public string? addnum1 { get; set; }
+        public string? addnum2 { get; set; }
+        public int? addtype1 { get; set; }
+        public int? addtype2 { get; set; }
+        public int isactive { get; set; }
     }
 }
