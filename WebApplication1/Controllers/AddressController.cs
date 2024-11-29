@@ -44,5 +44,20 @@ namespace WebApplication1.Controllers
             return Ok(seacrhModels);
         }
 
+        /// <summary>
+        /// Get chain in GAR
+        /// </summary>
+        
+        [ProducesResponseType(typeof(List<SearchAddressModel>), 200)]
+        [ProducesResponseType(typeof(ExceptionResponse), 500)]
+        [AllowAnonymous]
+        [HttpGet("chain")]
+        public async Task<IActionResult> Chain(Guid guid)
+        {
+            var seacrhModels = await _addressService.Chain(guid);
+
+            return Ok(seacrhModels);
+        }
+
     }
 }

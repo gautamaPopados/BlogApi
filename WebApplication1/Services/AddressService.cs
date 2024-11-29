@@ -19,6 +19,7 @@ namespace WebApplication1.Services
         public async Task<List<SearchAddressModel>> Search(long parentObjectId, string? query)
         {
             var addressses = new List<SearchAddressModel>();
+            var houseAddressses = new List<SearchAddressModel>();
 
             var childHierarchies = await _db.Hierarchies.Where(h => h.parentobjid == parentObjectId && h.isactive == 1).ToListAsync();
 
@@ -39,16 +40,103 @@ namespace WebApplication1.Services
                         objectId = a.objectid,
                         objectGuid = a.objectguid,
                         text = a.typename + " " + a.name,
-                        objectLevel = (GarAddressLevel)Int32.Parse(a.level),
-                        objectLevelText = GetText((GarAddressLevel)Int32.Parse(a.level))
+                        objectLevel = (GarAddressLevel)(Int32.Parse(a.level)),
+                        objectLevelText = GetText((GarAddressLevel)(Int32.Parse(a.level) - 1))
                     })
                     .ToListAsync();
 
-                var houses = _db.Houses.Where(h => childObjectIds.Contains(h.objectid));
+                var childHouses = _db.Houses.Where(h => childObjectIds.Contains(h.objectid));
+                houseAddressses = await childHouses
+                    .Select(a => new SearchAddressModel
+                    {
+                        objectId = a.objectid,
+                        objectGuid = a.objectguid,
+                        text = a.housenum,
+                        objectLevel = GarAddressLevel.Building,
+                        objectLevelText = GetText(GarAddressLevel.Building)
+                    })
+                    .ToListAsync();
             }
+            addressses.AddRange(houseAddressses);
+            return addressses;
+        }
+
+        public async Task<List<SearchAddressModel>> Chain(Guid objectGuid)
+        {
+            var addressses = new List<SearchAddressModel>();
+            var childHouse = await _db.Houses.FirstOrDefaultAsync(h => h.objectguid == objectGuid);
+
+            if (childHouse != null)
+            {
+                var parentId = _db.Hierarchies.FirstOrDefault(h => h.objectid == childHouse.objectid).parentobjid;
+
+                if (parentId != null)
+                {
+                    var parentGuid = _db.AddrElements.FirstOrDefault(a => a.objectid == parentId).objectguid;
+                    objectGuid = parentGuid;
+                }
+
+                addressses.Add(new SearchAddressModel
+                {
+                    objectId = childHouse.objectid,
+                    objectGuid = childHouse.objectguid,
+                    text = childHouse.housenum,
+                    objectLevel = GarAddressLevel.Building,
+                    objectLevelText = GetText(GarAddressLevel.Building)
+                });
+            }
+
+            var address = await _db.AddrElements.FirstOrDefaultAsync(a => a.objectguid == objectGuid);
+
+            if(address != null)
+            {
+                var newAddressModel = new SearchAddressModel()
+                {
+                    objectId = address.objectid,
+                    objectGuid = address.objectguid,
+                    text = address.typename + " " + address.name,
+                    objectLevel = (GarAddressLevel)(Int32.Parse(address.level)),
+                    objectLevelText = GetText((GarAddressLevel)(Int32.Parse(address.level) - 1))
+                };
+
+                while (newAddressModel != null) 
+                {
+                    addressses.Add(newAddressModel);
+
+                    var currentHierarchy = await _db.Hierarchies.Where(h => h.objectid == newAddressModel.objectId).FirstOrDefaultAsync();
+
+                    if (currentHierarchy == null || currentHierarchy.parentobjid == null)
+                    {
+                        return null;
+                    }
+
+                    address = await _db.AddrElements.Where(a => a.objectid == currentHierarchy.parentobjid).FirstOrDefaultAsync();
+
+                    if (address != null)
+                    {
+                        newAddressModel = new SearchAddressModel()
+                        {
+                            objectId = address.objectid,
+                            objectGuid = address.objectguid,
+                            text = address.typename + " " + address.name,
+                            objectLevel = (GarAddressLevel)(Int32.Parse(address.level)),
+                            objectLevelText = GetText((GarAddressLevel)(Int32.Parse(address.level) - 1))
+                        };
+
+                        addressses.Add(newAddressModel);
+                    }
+                    else
+                    {
+                        newAddressModel = null;
+                    }
+                }
+            }
+
+            addressses.Reverse();
 
             return addressses;
         }
+
 
         private static readonly Dictionary<GarAddressLevel, string> LevelTexts = new()
         {

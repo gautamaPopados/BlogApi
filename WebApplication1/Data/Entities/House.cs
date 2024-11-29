@@ -10,6 +10,6 @@
         public string? addnum2 { get; set; }
         public int? addtype1 { get; set; }
         public int? addtype2 { get; set; }
-        public int isactive { get; set; }
+        public bool isactive { get; set; }
     }
 }
