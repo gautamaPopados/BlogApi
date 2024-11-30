@@ -8,6 +8,8 @@ namespace WebApplication1.Data
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
         public DbSet<User> Users { set; get; }
         public DbSet<Community> Communities { set; get; }
+        public DbSet<Comment> Comments { set; get; }
+        public DbSet<Post> Posts { set; get; }
 
         public DbSet<Tag> Tags { set; get; }
 
