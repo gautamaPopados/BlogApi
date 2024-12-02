@@ -8,7 +8,7 @@ namespace WebApplication1.Data.Entities
 
         [DataType(DataType.Date)]
         public DateTime CreateTime { get; set; }
-        public string Content { get; set; }
+        public string Title { get; set; }
         public string Description { get; set; }
         public int ReadingTime { get; set; }
         public string? Image {  get; set; }
@@ -20,7 +20,7 @@ namespace WebApplication1.Data.Entities
         public Guid? AddressId { get; set; }
         public int Likes { get; set; }
         public bool HasLike {  get; set; }
-        public int SubComments { get; set; }
+        public int CommentsCount { get; set; }
         public List<Guid> Tags { get; set; }
         public List<Comment> Comments { get; set; }
     }

@@ -11,6 +11,12 @@
         public NotFoundException(string message) : base(message)
         { 
         }  
+    } 
+    public class AccessDeniedException : Exception
+    {
+        public AccessDeniedException(string message) : base(message)
+        { 
+        }  
     }
 
 }

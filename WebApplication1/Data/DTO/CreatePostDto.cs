@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using WebApplication1.Validators;
 
 namespace WebApplication1.Data.DTO
 {
@@ -13,6 +14,8 @@ namespace WebApplication1.Data.DTO
         public string description { get; set; }
         public int readingTime { get; set; }
         public string? image {  get; set; }
+
+        [Address]
         public Guid? addressId { get; set; }
 
         [MinLength(1)]

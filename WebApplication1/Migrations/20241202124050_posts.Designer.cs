@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using WebApplication1.Data;
@@ -12,9 +13,11 @@ using WebApplication1.Data;
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241202124050_posts")]
+    partial class posts
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -170,8 +173,6 @@ namespace WebApplication1.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CommunityId");
-
                     b.HasIndex("UserId");
 
                     b.ToTable("Posts");
@@ -259,10 +260,6 @@ namespace WebApplication1.Migrations
 
             modelBuilder.Entity("WebApplication1.Data.Entities.Post", b =>
                 {
-                    b.HasOne("WebApplication1.Data.Entities.Community", null)
-                        .WithMany("Posts")
-                        .HasForeignKey("CommunityId");
-
                     b.HasOne("WebApplication1.Data.Entities.User", null)
                         .WithMany("Posts")
                         .HasForeignKey("UserId");
@@ -271,8 +268,6 @@ namespace WebApplication1.Migrations
             modelBuilder.Entity("WebApplication1.Data.Entities.Community", b =>
                 {
                     b.Navigation("CommunityUsers");
-
-                    b.Navigation("Posts");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.Entities.Post", b =>

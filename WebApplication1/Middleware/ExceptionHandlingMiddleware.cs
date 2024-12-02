@@ -38,6 +38,7 @@ namespace WebApplication1.Middleware
                 NotFoundException _ => new ExceptionResponse(HttpStatusCode.NotFound, $"{exception.Message}"),
                 UnauthorizedAccessException _ => new ExceptionResponse(HttpStatusCode.Unauthorized, "Unauthorized."),
                 BadRequestException _ => new ExceptionResponse(HttpStatusCode.BadRequest, $"{exception.Message}"),
+                AccessDeniedException _ => new ExceptionResponse(HttpStatusCode.Forbidden, $"{exception.Message}"),
                 _ => new ExceptionResponse(HttpStatusCode.InternalServerError, "Internal server error. Please retry later.")
             };
 

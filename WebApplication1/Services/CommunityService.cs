@@ -1,11 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.Globalization;
-using System.IdentityModel.Tokens.Jwt;
-using System.Net;
-using System.Reflection.Metadata.Ecma335;
-using System.Security.Claims;
-using System.Text;
 using WebApplication1.AuthentificationServices;
 using WebApplication1.Data;
 using WebApplication1.Data.DTO;
@@ -13,7 +6,6 @@ using WebApplication1.Data.Entities;
 using WebApplication1.Data.Enums;
 using WebApplication1.Exceptions;
 using WebApplication1.Services.IServices;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace WebApplication1.Services
 {
@@ -201,7 +193,8 @@ namespace WebApplication1.Services
             }
 
             var communityUser = user.CommunityUsers
-                .GroupBy(cu => cu.CommunityId)
+                .Where(cu => cu.CommunityId == id).
+                GroupBy(cu => cu.CommunityId)
                 .Select(g => g.OrderByDescending(cu => cu.Role)
                                .FirstOrDefault()).FirstOrDefault();
 
@@ -213,6 +206,71 @@ namespace WebApplication1.Services
             {
                 return communityUser.Role;
             }
+        }
+
+        public async Task<Guid> Create(CreatePostDto model, Guid communityId, string token)
+        {
+            Guid userId = new Guid(_tokenService.GetUserId(token));
+            var user = await _db.Users.Include(user => user.CommunityUsers).FirstOrDefaultAsync(user => user.Id == userId);
+
+            if (user == null)
+            {
+                throw new NotFoundException("Non-existent user");
+            }
+
+            var community = await _db.Communities.FirstOrDefaultAsync(c => c.Id == communityId);
+
+            if (community == null)
+            {
+                throw new NotFoundException("Non-existent community");
+            }
+
+            CommunityRole? role = await GetGreatestRole(token, communityId);
+
+            System.Diagnostics.Debug.WriteLine("role " + role);
+
+            if (role == null || role != CommunityRole.Administrator)
+            {
+                throw new AccessDeniedException("User is not able to post in the community");
+            }
+
+            var tagsCountInDb = _db.Tags.Count(tag => model.tags.Contains(tag.Id));
+
+            if (tagsCountInDb != model.tags.Count())
+            {
+                throw new NotFoundException("Non-existent tag");
+            }
+
+            var post = new Post
+            {
+                Id = Guid.NewGuid(),
+                CreateTime = DateTime.UtcNow,
+                Title = model.title,
+                Description = model.description,
+                ReadingTime = model.readingTime,
+                Image = model.image,
+                AuthorId = userId,
+                Author = user.FullName,
+                CommunityId = communityId,
+                CommunityName = community.Name,
+                AddressId = model.addressId,
+                Likes = 0,
+                CommentsCount = 0,
+                Tags = model.tags,
+                Comments = new List<Comment>()
+            };
+
+            user.Posts.Add(post);
+            
+            _db.Posts.Add(post);
+            await _db.SaveChangesAsync();
+
+            return post.Id;
+        }
+
+        public Task<PostPagedListDto> GetPosts(Guid id, List<Guid> tags, PostSorting sorting, int? page, int? size)
+        {
+            throw new NotImplementedException();
         }
     }
 }

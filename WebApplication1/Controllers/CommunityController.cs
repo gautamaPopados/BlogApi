@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using WebApplication1.AuthentificationServices;
+using WebApplication1.Controllers.Parameters;
 using WebApplication1.Data.DTO;
 using WebApplication1.Data.Enums;
 using WebApplication1.Exceptions;
@@ -130,6 +131,46 @@ namespace WebApplication1.Controllers
             var communities = await _communityService.GetUserCommunities(token);
 
             return Ok(communities);
+        }
+
+        /// <summary>
+        /// Create a post in the specified community
+        /// </summary>
+
+        [ProducesResponseType(typeof(Guid), 200)]
+        [ProducesResponseType(typeof(ExceptionResponse), 400)]
+        [ProducesResponseType(typeof(ExceptionResponse), 401)]
+        [ProducesResponseType(typeof(ExceptionResponse), 403)]
+        [ProducesResponseType(typeof(ExceptionResponse), 404)]
+        [ProducesResponseType(typeof(ExceptionResponse), 500)]
+        [Authorize]
+        [HttpPost("{id}/post")]
+        public async Task<IActionResult> CreatePost([FromBody] CreatePostDto model, Guid id)
+        {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
+            var postID = await _communityService.Create(model, id, token);
+
+            return Ok(postID);
+        }
+        
+        /// <summary>
+        /// Get community's posts
+        /// </summary>
+
+        [ProducesResponseType(typeof(Guid), 200)]
+        [ProducesResponseType(typeof(ExceptionResponse), 400)]
+        [ProducesResponseType(typeof(ExceptionResponse), 401)]
+        [ProducesResponseType(typeof(ExceptionResponse), 403)]
+        [ProducesResponseType(typeof(ExceptionResponse), 404)]
+        [ProducesResponseType(typeof(ExceptionResponse), 500)]
+        [Authorize]
+        [HttpGet("{id}/post")]
+        public async Task<IActionResult> GetPosts(Guid id, [FromQuery] List<Guid> tags, PostSorting sorting, [FromQuery] CommunityPostsParameters postsParameters)
+        {
+            var posts = await _communityService.GetPosts(id, tags, sorting, postsParameters.page, postsParameters.size);
+
+            return Ok(posts);
         }
     }
 }

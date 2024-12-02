@@ -30,16 +30,21 @@ namespace WebApplication1.Controllers
         }
 
         /// <summary>
-        /// Search in GAR
+        /// Create a personal post
         /// </summary>
-        
-        [ProducesResponseType(typeof(List<SearchAddressModel>), 200)]
+
+        [ProducesResponseType(typeof(Guid), 200)]
+        [ProducesResponseType(typeof(ExceptionResponse), 400)]
+        [ProducesResponseType(typeof(ExceptionResponse), 401)]
+        [ProducesResponseType(typeof(ExceptionResponse), 404)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [AllowAnonymous]
+        [Authorize]
         [HttpPost("")]
         public async Task<IActionResult> CreatePost([FromBody] CreatePostDto model)
         {
-            var postID = await _postService.Create(model);
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
+            var postID = await _postService.Create(token, model);
 
             return Ok(postID);
         }
