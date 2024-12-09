@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebApplication1.AuthentificationServices;
 using WebApplication1.Data;
 using WebApplication1.Data.DTO;
@@ -268,9 +269,123 @@ namespace WebApplication1.Services
             return post.Id;
         }
 
-        public Task<PostPagedListDto> GetPosts(Guid id, List<Guid> tags, PostSorting sorting, int? page, int? size)
+        public async Task<PostPagedListDto> GetPosts(string? token, Guid id, List<Guid>? tags, PostSorting? sorting, int page, int size)
         {
-            throw new NotImplementedException();
+
+            page = page < 1 ? 1 : page;
+            size = size < 1 ? 5 : size;
+
+            User user = null;
+            var userId = Guid.Empty;
+
+            if (!String.IsNullOrEmpty(token))
+            {
+
+                userId = new Guid(_tokenService.GetUserId(token));
+                user = await _db.Users.Include(user => user.CommunityUsers).FirstOrDefaultAsync(user => user.Id == userId);
+            }
+
+            if (!String.IsNullOrEmpty(token) && user == null)
+            {
+                throw new NotFoundException("Non-existent user");
+            }
+
+            var community = await _db.Communities.Include(c => c.Posts).FirstOrDefaultAsync(c => c.Id == id);
+
+            if (user != null && community.IsClosed)
+            {
+                var isAllowed = user.Communities.Any(c => c.Id == id);
+
+                if (!isAllowed)
+                {
+                    throw new AccessDeniedException("User is not subscribe");
+                }
+            }
+
+            if (user == null && community.IsClosed)
+            {
+                throw new AccessDeniedException("User is not authentificated");
+            }
+
+            if (community == null)
+            {
+                throw new NotFoundException("Non-existent community");
+            }
+
+            var posts = community.Posts.AsQueryable();
+
+            if (tags.Any())
+            {
+                posts = posts.Where(p => p.Tags.Any(tags.Contains));
+            }
+
+            posts = SortPosts(posts, sorting);
+
+            var postsPage = posts.Skip((page - 1) * size).Take(size);
+
+            var pagesCount = (int)Math.Ceiling((double)posts.Count() / size);
+
+            pagesCount = pagesCount < 1 ? 1 : pagesCount;
+
+            var pagination = new PageInfoModel
+            {
+                size = size,
+                count = pagesCount,
+                current = page
+            };
+
+            PostPagedListDto postDtos = new PostPagedListDto()
+            {
+                posts = postsPage.Select(p => new PostDto
+                {
+                    id = p.Id,
+                    description = p.Description,
+                    createTime = p.CreateTime,
+                    title = p.Title,
+                    readingTime = p.ReadingTime,
+                    image = p.Image,
+                    author = p.Author,
+                    authorId = p.AuthorId,
+                    communityId = p.CommunityId,
+                    communityName = p.CommunityName,
+                    addressId = p.AddressId,
+                    likes = p.Likes,
+                    hasLike = p.HasLike,
+                    commentsCount = p.CommentsCount,
+                    tags = _db.Tags.Where(tag => p.Tags.Contains(tag.Id))
+                        .Select(tag => new TagDto
+                        {
+                            id = tag.Id,
+                            createTime = tag.CreateTime,
+                            name = tag.Name
+                        })
+                        .ToList()
+                }).ToList(),
+                pagination = pagination
+            };
+
+            return postDtos;
+        }
+
+        public IQueryable<Post> SortPosts(IQueryable<Post> posts,  PostSorting? postSorting)
+        {
+            switch (postSorting)
+            {
+                case PostSorting.CreateDesc:
+                    posts = posts.OrderByDescending(p => p.CreateTime);
+                    break;
+                case PostSorting.CreateAsc:
+                    posts = posts.OrderBy(p => p.CreateTime);
+                    break;
+                case PostSorting.LikeDesc:
+                    posts = posts.OrderByDescending(p => p.Likes);
+                    break;
+                case PostSorting.LikeAsc:
+                    posts = posts.OrderBy(p => p.CreateTime);
+                    break;
+            }
+
+            return posts;
         }
     }
 }

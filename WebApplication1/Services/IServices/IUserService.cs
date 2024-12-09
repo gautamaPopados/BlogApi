@@ -8,5 +8,6 @@ public interface IUserService
     public Task<TokenResponse> Login(LoginCredentials loginRequestDTO);
     public Task<TokenResponse> Register(UserRegistrationModel registrationRequestDTO);
     public Task Logout(string token);
+    public Task Edit(string token, UserEditModel model);
     public Task<UserDto> GetProfile(string token);
 }

@@ -12,7 +12,7 @@ namespace WebApplication1.Services.IServices
         public Task<CommunityRole?> GetGreatestRole(string token, Guid id);
         public Task<List<CommunityUserDto>> GetUserCommunities(string token);
         public Task<Guid> Create(CreatePostDto model, Guid communityId, string token);
-        public Task<PostPagedListDto> GetPosts(Guid id, List<Guid> tags, PostSorting sorting, int? page, int? size);
+        public Task<PostPagedListDto> GetPosts(string? token, Guid id, List<Guid>? tags, PostSorting? sorting, int page, int size);
 
 
     }

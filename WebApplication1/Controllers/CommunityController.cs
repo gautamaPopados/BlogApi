@@ -6,7 +6,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using WebApplication1.AuthentificationServices;
-using WebApplication1.Controllers.Parameters;
 using WebApplication1.Data.DTO;
 using WebApplication1.Data.Enums;
 using WebApplication1.Exceptions;
@@ -164,11 +163,19 @@ namespace WebApplication1.Controllers
         [ProducesResponseType(typeof(ExceptionResponse), 403)]
         [ProducesResponseType(typeof(ExceptionResponse), 404)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [Authorize]
+        [AllowAnonymous]
         [HttpGet("{id}/post")]
-        public async Task<IActionResult> GetPosts(Guid id, [FromQuery] List<Guid> tags, PostSorting sorting, [FromQuery] CommunityPostsParameters postsParameters)
+        public async Task<IActionResult> GetPosts(Guid id, int page = 1, int size = 5, [FromQuery] List<Guid>? tags = null, PostSorting? sorting = null)
         {
-            var posts = await _communityService.GetPosts(id, tags, sorting, postsParameters.page, postsParameters.size);
+            string token = null;
+            try
+            {
+                token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            }
+            catch { }
+
+
+            var posts = await _communityService.GetPosts(token, id, tags, sorting, page, size);
 
             return Ok(posts);
         }

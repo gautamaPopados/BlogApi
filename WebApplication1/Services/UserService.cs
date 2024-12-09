@@ -30,6 +30,17 @@ namespace WebApplication1.Services
             return false;
         }
 
+        public bool IsUniquePhoneNumber(string phoneNumber)
+        {
+            var user = _db.Users.FirstOrDefault(x => x.PhoneNumber == phoneNumber);
+            
+            if (user == null)
+            {
+                return true;
+            }
+            return false;
+        }
+
         public async Task<TokenResponse> Login(LoginCredentials loginRequestDTO)
         {
             var user = _db.Users.FirstOrDefault(u => u.Email == loginRequestDTO.email);
@@ -128,6 +139,37 @@ namespace WebApplication1.Services
             throw new UnauthorizedAccessException();   
         }
 
-        
+        public async Task Edit(string token, UserEditModel model)
+        {
+            string id = _tokenService.GetUserId(token);
+
+            if (!IsUniqueUser(model.email))
+            {
+                throw new BadRequestException($"Username '{model.email}' is already taken.");
+            }
+
+            if (!IsUniquePhoneNumber(model.phoneNumber))
+            {
+                throw new BadRequestException($"Phone Number '{model.phoneNumber}' is already taken.");
+            }
+
+            if (!string.IsNullOrEmpty(id))
+            {
+                var user = await _db.Users.FirstOrDefaultAsync(user => user.Id.ToString() == id);
+
+                if (user != null)
+                {
+                    user.PhoneNumber = model.phoneNumber;
+                    user.FullName = model.fullName;
+                    user.BirthDate = model.birthDate;
+                    user.Gender = model.gender;
+                    user.Email = model.email;
+
+                    await _db.SaveChangesAsync();
+                }
+                else throw new NotFoundException("User not found.");
+            }
+            else throw new UnauthorizedAccessException();
+        }
     }
 }

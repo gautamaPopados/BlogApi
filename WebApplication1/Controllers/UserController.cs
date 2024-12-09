@@ -15,13 +15,13 @@ namespace WebApplication1.Controllers
 {
     [Route("api/account")]
     [ApiController]
-    public class UsersController : Controller
+    public class UserController : Controller
     {
         private readonly IUserService _userService;
-        private readonly ILogger<UsersController> _logger;
+        private readonly ILogger<UserController> _logger;
         private ITokenLifetimeManager _jwtTokenLifetimeManager;
 
-        public UsersController(IUserService userService, ILogger<UsersController> logger, ITokenLifetimeManager lifetimeManager)
+        public UserController(IUserService userService, ILogger<UserController> logger, ITokenLifetimeManager lifetimeManager)
         {
             _jwtTokenLifetimeManager = lifetimeManager;
             _userService = userService;
@@ -97,6 +97,24 @@ namespace WebApplication1.Controllers
              var profileResponse = await _userService.GetProfile(token);
 
             return Ok(profileResponse);
+        }
+        
+        /// <summary>
+        /// Edit user profile
+        /// </summary>
+        [ProducesResponseType(typeof(UserDto), 200)]
+        [ProducesResponseType(typeof(ExceptionResponse), 400)]
+        [ProducesResponseType(typeof(ExceptionResponse), 401)]
+        [ProducesResponseType(typeof(ExceptionResponse), 500)]
+        [Authorize]
+        [HttpPut("profile")]
+        public async Task<ActionResult<UserDto>> EditProfile([FromBody] UserEditModel model)
+        {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
+            await _userService.Edit(token, model);
+
+            return Ok();
         }
 
         
