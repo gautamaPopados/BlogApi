@@ -49,6 +49,47 @@ namespace WebApplication1.Controllers
             return Ok(postID);
         }
 
+        /// <summary>
+        /// Get a list of available posts
+        /// </summary>
 
+        [ProducesResponseType(typeof(Guid), 200)]
+        [ProducesResponseType(typeof(ExceptionResponse), 400)]
+        [ProducesResponseType(typeof(ExceptionResponse), 401)]
+        [ProducesResponseType(typeof(ExceptionResponse), 403)]
+        [ProducesResponseType(typeof(ExceptionResponse), 404)]
+        [ProducesResponseType(typeof(ExceptionResponse), 500)]
+        [AllowAnonymous]
+        [HttpGet("")]
+        public async Task<IActionResult> GetPosts(bool onlyMyCommunities = false, int page = 1, int size = 5, [FromQuery] List<Guid>? tags = null, PostSorting? sorting = null, string? author = null, int? min = null, int? max = null)
+        {
+            string token = null;
+            try
+            {
+                token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            }
+            catch { }
+
+            var posts = await _postService.GetPosts(page, onlyMyCommunities, size, author, min, max, token, tags, sorting);
+
+            return Ok(posts);
+        }
+
+        /// <summary>
+        /// Get information about concrete post
+        /// </summary>
+        [ProducesResponseType(typeof(CommunityFullDto), 200)]
+        [ProducesResponseType(typeof(ExceptionResponse), 401)]
+        [ProducesResponseType(typeof(ExceptionResponse), 403)]
+        [ProducesResponseType(typeof(ExceptionResponse), 404)]
+        [ProducesResponseType(typeof(ExceptionResponse), 500)]
+        [Authorize]
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetPostById(Guid id)
+        {
+            var community = await _postService.GetPostById(id);
+
+            return Ok(community);
+        }
     }
 }
