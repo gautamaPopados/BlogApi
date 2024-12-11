@@ -136,7 +136,7 @@ namespace WebApplication1.Services
         public async Task<PostFullDto> GetPostById(Guid id, string token)
         {
             Guid userId = new Guid(_tokenService.GetUserId(token));
-            var user = await _db.Users.FirstOrDefaultAsync(user => user.Id == userId);
+            var user = await _db.Users.Include(user => user.Communities).FirstOrDefaultAsync(user => user.Id == userId);
 
             if (user == null)
             {
@@ -203,6 +203,7 @@ namespace WebApplication1.Services
                         }).ToList() 
 
             };
+
             return postDto;
         }
 

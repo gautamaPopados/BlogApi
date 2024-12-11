@@ -21,6 +21,7 @@ builder.Services.AddScoped<ICommunityService, CommunityService>();
 builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IAddressService, AddressService>();
 builder.Services.AddScoped<IPostService, PostService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
 
 builder.Services.AddSingleton<ITokenLifetimeManager>(tokenLifetimeManager);
 builder.Services.AddSingleton<TokenService>();

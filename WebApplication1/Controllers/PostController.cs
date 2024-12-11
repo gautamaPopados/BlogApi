@@ -76,7 +76,7 @@ namespace WebApplication1.Controllers
         }
 
         /// <summary>
-        /// Get information about concrete post
+        /// Get information about a concrete post
         /// </summary>
         [ProducesResponseType(typeof(PostFullDto), 200)]
         [ProducesResponseType(typeof(ExceptionResponse), 401)]
@@ -95,7 +95,7 @@ namespace WebApplication1.Controllers
         }
 
         /// <summary>
-        /// Add like to concrete post
+        /// Add like to a concrete post
         /// </summary>
         [ProducesResponseType(200)]
         [ProducesResponseType(typeof(ExceptionResponse), 400)]
@@ -114,7 +114,7 @@ namespace WebApplication1.Controllers
         }
 
         /// <summary>
-        /// Dislike concrete post
+        /// Dislike a concrete post
         /// </summary>
         [ProducesResponseType(200)]
         [ProducesResponseType(typeof(ExceptionResponse), 400)]
