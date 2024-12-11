@@ -5,6 +5,7 @@ using WebApplication1.Data.DTO;
 using WebApplication1.Data.Entities;
 using WebApplication1.Data.Enums;
 using WebApplication1.Exceptions;
+using WebApplication1.Migrations;
 using WebApplication1.Services.IServices;
 
 
@@ -19,6 +20,74 @@ namespace WebApplication1.Services
         {
             _db = db;
             _tokenService = tokenService;
+        }
+
+        public async Task AddLike(Guid id, string token)
+        {
+            Guid userId = new Guid(_tokenService.GetUserId(token));
+            var user = await _db.Users.Include(user => user.UserLikes).FirstOrDefaultAsync(user => user.Id == userId);
+
+            if (user == null)
+            {
+                throw new NotFoundException("Non-existent user");
+            }
+
+            var post = await _db.Posts.Include(p => p.Comments).FirstOrDefaultAsync(p => p.Id == id);
+
+            if (post == null)
+            {
+                throw new NotFoundException("Non-existent post");
+            }
+
+            if (user.UserLikes.Exists(ul => ul.UserId == user.Id && ul.PostId == id))
+            {
+                throw new BadRequestException($"User with id={userId} already liked to the post with id={id}");
+            }
+
+            post.UserLikes.Add(
+                new PostUserLike()
+                {
+                    User = user,
+                    Post = post,
+                    Liked = true
+                });
+
+            post.Likes++;
+
+            await _db.SaveChangesAsync();
+
+            return;
+        }
+        public async Task Dislike(Guid id, string token)
+        {
+            Guid userId = new Guid(_tokenService.GetUserId(token));
+            var user = await _db.Users.Include(user => user.UserLikes).FirstOrDefaultAsync(user => user.Id == userId);
+
+            if (user == null)
+            {
+                throw new NotFoundException("Non-existent user");
+            }
+
+            var post = await _db.Posts.Include(p => p.Comments).FirstOrDefaultAsync(p => p.Id == id);
+
+            if (post == null)
+            {
+                throw new NotFoundException("Non-existent post");
+            }
+
+            var like = user.UserLikes.FirstOrDefault(cu => cu.UserId == user.Id && cu.PostId == id);
+
+            if (like == null)
+            {
+                throw new BadRequestException($"User with id={userId} has not liked the post with id={id}");
+            }
+
+            user.UserLikes.Remove(like);
+            post.Likes--;
+
+            await _db.SaveChangesAsync();
+
+            return;
         }
 
         public async Task<Guid> Create(string token, CreatePostDto model)
@@ -64,6 +133,79 @@ namespace WebApplication1.Services
             return post.Id;
         }
 
+        public async Task<PostFullDto> GetPostById(Guid id, string token)
+        {
+            Guid userId = new Guid(_tokenService.GetUserId(token));
+            var user = await _db.Users.FirstOrDefaultAsync(user => user.Id == userId);
+
+            if (user == null)
+            {
+                throw new NotFoundException("Non-existent user");
+            }
+
+            var post = await _db.Posts.Include(p => p.Comments).FirstOrDefaultAsync(p => p.Id == id);
+
+            if (post == null)
+            {
+                throw new NotFoundException("Non-existent post");
+            }
+
+            if (post.CommunityId.HasValue)
+            {
+                var community = await _db.Communities.FirstOrDefaultAsync(c => c.Id == post.CommunityId);
+
+                if (community == null)
+                {
+                    throw new NotFoundException("Non-existent community");
+                }
+
+                var isSubscribed = user.Communities.Any(c => c.Id == post.CommunityId);
+
+                if (!isSubscribed && community.IsClosed)
+                {
+                    throw new AccessDeniedException("User is not subscribed");
+                }
+            }
+
+            PostFullDto postDto = new PostFullDto()
+            {
+                id = post.Id,
+                createTime = post.CreateTime,
+                title = post.Title,
+                description = post.Description,
+                readingTime = post.ReadingTime,
+                image = post.Image,
+                authorId = post.AuthorId,
+                author = post.Author,
+                communityId = post.CommunityId,
+                communityName = post.CommunityName,
+                addressId = post.AddressId,
+                likes = post.Likes,
+                hasLike = post.HasLike,
+                commentsCount = post.CommentsCount,
+                tags = _db.Tags.Where(tag => post.Tags.Contains(tag.Id))
+                        .Select(tag => new TagDto
+                        {
+                            id = tag.Id,
+                            createTime = tag.CreateTime,
+                            name = tag.Name
+                        }).ToList(),
+                comments = post.Comments.Where(comment => comment.ParentId == null).Select(comment => new CommentDto
+                        {
+                            id = comment.Id,
+                            createTime = comment.CreateTime,
+                            content = comment.Content,
+                            modifiedDate = comment.ModifiedDate,
+                            deleteDate = comment.DeleteDate,
+                            authorId = comment.AuthorId,
+                            author = comment.Author,
+                            subComments = comment.SubComments
+                        }).ToList() 
+
+            };
+            return postDto;
+        }
+
         public async Task<PostPagedListDto> GetPosts(int page, bool onlyMyCommunities, int size, string? author, int? min, int? max, string? token, List<Guid>? tags, PostSorting? sorting)
         {
             page = page < 1 ? 1 : page;
@@ -94,10 +236,10 @@ namespace WebApplication1.Services
 
             if (user != null && onlyMyCommunities)
             {
-                var communityIds = user.Communities.Select(c => c.Id).ToList();
+                var allowedCommunitiesIds = user.Communities.Select(c => c.Id).ToList();
 
                 posts = posts
-                    .Where(p => p.CommunityId.HasValue && communityIds.Contains((Guid)p.CommunityId));
+                    .Where(p => p.CommunityId.HasValue && allowedCommunitiesIds.Contains((Guid)p.CommunityId));
             }
 
             if (user != null && !onlyMyCommunities)

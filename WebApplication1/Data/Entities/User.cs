@@ -29,5 +29,8 @@ namespace WebApplication1.Data.Entities
         public List<CommunityUser> CommunityUsers { get; set; } = new List<CommunityUser>();
         public List<Post> Posts { get; set; } = new List<Post>();
 
+        public List<PostUserLike> UserLikes { get; set; } = new List<PostUserLike>();
+
+
     }
 }

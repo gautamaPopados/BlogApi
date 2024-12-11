@@ -53,7 +53,7 @@ namespace WebApplication1.Controllers
         /// Get a list of available posts
         /// </summary>
 
-        [ProducesResponseType(typeof(Guid), 200)]
+        [ProducesResponseType(typeof(PostPagedListDto), 200)]
         [ProducesResponseType(typeof(ExceptionResponse), 400)]
         [ProducesResponseType(typeof(ExceptionResponse), 401)]
         [ProducesResponseType(typeof(ExceptionResponse), 403)]
@@ -78,7 +78,7 @@ namespace WebApplication1.Controllers
         /// <summary>
         /// Get information about concrete post
         /// </summary>
-        [ProducesResponseType(typeof(CommunityFullDto), 200)]
+        [ProducesResponseType(typeof(PostFullDto), 200)]
         [ProducesResponseType(typeof(ExceptionResponse), 401)]
         [ProducesResponseType(typeof(ExceptionResponse), 403)]
         [ProducesResponseType(typeof(ExceptionResponse), 404)]
@@ -87,9 +87,49 @@ namespace WebApplication1.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetPostById(Guid id)
         {
-            var community = await _postService.GetPostById(id);
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
 
-            return Ok(community);
+            var post = await _postService.GetPostById(id, token);
+
+            return Ok(post);
+        }
+
+        /// <summary>
+        /// Add like to concrete post
+        /// </summary>
+        [ProducesResponseType(200)]
+        [ProducesResponseType(typeof(ExceptionResponse), 400)]
+        [ProducesResponseType(typeof(ExceptionResponse), 401)]
+        [ProducesResponseType(typeof(ExceptionResponse), 404)]
+        [ProducesResponseType(typeof(ExceptionResponse), 500)]
+        [Authorize]
+        [HttpPost("{id}/like")]
+        public async Task<IActionResult> AddLike(Guid id)
+        {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
+            await _postService.AddLike(id, token);
+
+            return Ok();
+        }
+
+        /// <summary>
+        /// Dislike concrete post
+        /// </summary>
+        [ProducesResponseType(200)]
+        [ProducesResponseType(typeof(ExceptionResponse), 400)]
+        [ProducesResponseType(typeof(ExceptionResponse), 401)]
+        [ProducesResponseType(typeof(ExceptionResponse), 404)]
+        [ProducesResponseType(typeof(ExceptionResponse), 500)]
+        [Authorize]
+        [HttpDelete("{id}/like")]
+        public async Task<IActionResult> Dislike(Guid id)
+        {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
+            await _postService.Dislike(id, token);
+
+            return Ok();
         }
     }
 }

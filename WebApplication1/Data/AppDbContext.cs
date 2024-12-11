@@ -28,6 +28,19 @@ namespace WebApplication1.Data
                        j.HasKey(t => new { t.Id });
                        j.ToTable("CommunityUser");
                    });
+
+            modelBuilder
+                .Entity<Post>()
+                .HasMany(c => c.Users)
+                .WithMany(s => s.Posts)
+                .UsingEntity<PostUserLike>(
+                   j => j.HasOne(pt => pt.User).WithMany(t => t.UserLikes).HasForeignKey(pt => pt.UserId),
+                   j => j.HasOne(pt => pt.Post).WithMany(p => p.UserLikes).HasForeignKey(pt => pt.PostId),
+                   j =>
+                   {
+                       j.HasKey(t => new { t.Id });
+                       j.ToTable("UserLike");
+                   });
         }
     }
 }

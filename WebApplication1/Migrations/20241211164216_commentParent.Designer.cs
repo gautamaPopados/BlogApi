@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using WebApplication1.Data;
@@ -12,9 +13,11 @@ using WebApplication1.Data;
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241211164216_commentParent")]
+    partial class commentParent
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -168,35 +171,16 @@ namespace WebApplication1.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CommunityId");
 
-                    b.ToTable("Posts");
-                });
-
-            modelBuilder.Entity("WebApplication1.Data.Entities.PostUserLike", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("Liked")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid>("PostId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PostId");
-
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserLike", (string)null);
+                    b.ToTable("Posts");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.Entities.Tag", b =>
@@ -284,25 +268,10 @@ namespace WebApplication1.Migrations
                     b.HasOne("WebApplication1.Data.Entities.Community", null)
                         .WithMany("Posts")
                         .HasForeignKey("CommunityId");
-                });
 
-            modelBuilder.Entity("WebApplication1.Data.Entities.PostUserLike", b =>
-                {
-                    b.HasOne("WebApplication1.Data.Entities.Post", "Post")
-                        .WithMany("UserLikes")
-                        .HasForeignKey("PostId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("WebApplication1.Data.Entities.User", "User")
-                        .WithMany("UserLikes")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Post");
-
-                    b.Navigation("User");
+                    b.HasOne("WebApplication1.Data.Entities.User", null)
+                        .WithMany("Posts")
+                        .HasForeignKey("UserId");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.Entities.Community", b =>
@@ -315,15 +284,13 @@ namespace WebApplication1.Migrations
             modelBuilder.Entity("WebApplication1.Data.Entities.Post", b =>
                 {
                     b.Navigation("Comments");
-
-                    b.Navigation("UserLikes");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.Entities.User", b =>
                 {
                     b.Navigation("CommunityUsers");
 
-                    b.Navigation("UserLikes");
+                    b.Navigation("Posts");
                 });
 #pragma warning restore 612, 618
         }

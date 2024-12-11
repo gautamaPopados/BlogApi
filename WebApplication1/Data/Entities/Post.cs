@@ -23,5 +23,8 @@ namespace WebApplication1.Data.Entities
         public int CommentsCount { get; set; }
         public List<Guid> Tags { get; set; }
         public List<Comment> Comments { get; set; }
+
+        public List<User> Users { get; set; } = new List<User>();
+        public List<PostUserLike> UserLikes { get; set; } = new List<PostUserLike>();
     }
 }
