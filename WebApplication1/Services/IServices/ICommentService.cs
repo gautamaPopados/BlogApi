@@ -7,6 +7,7 @@ namespace WebApplication1.Services.IServices
     {
         public Task CreateComment(CreateCommentDto model, string token, Guid id);
         public Task UpdateComment(UpdateCommentDto model, string token, Guid id);
-
+        public Task DeleteComment(string token, Guid id);
+        public Task<List<CommentDto>> GetTree(Guid id);
     }
 }

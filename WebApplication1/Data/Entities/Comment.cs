@@ -19,6 +19,10 @@ namespace WebApplication1.Data.Entities
         public Guid AuthorId { get; set; }
         public string Author {  get; set; }
         public int SubComments { get; set; } = 0;
+
         public List<Comment> SubcommentsList { get; set; } = new List<Comment>();
+
+        public Guid PostId { get; set; }
+        public Post Post { get; set; }
     }
 }

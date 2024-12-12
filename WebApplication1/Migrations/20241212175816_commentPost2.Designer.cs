@@ -13,8 +13,8 @@ using WebApplication1.Data;
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20241211213016_comments")]
-    partial class comments
+    [Migration("20241212175816_commentPost2")]
+    partial class commentPost2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -58,7 +58,7 @@ namespace WebApplication1.Migrations
                     b.Property<Guid?>("ParentId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("PostId")
+                    b.Property<Guid>("PostId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("SubComments")
@@ -267,9 +267,13 @@ namespace WebApplication1.Migrations
                         .WithMany("SubcommentsList")
                         .HasForeignKey("CommentId");
 
-                    b.HasOne("WebApplication1.Data.Entities.Post", null)
+                    b.HasOne("WebApplication1.Data.Entities.Post", "Post")
                         .WithMany("Comments")
-                        .HasForeignKey("PostId");
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Post");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.Entities.CommunityUser", b =>

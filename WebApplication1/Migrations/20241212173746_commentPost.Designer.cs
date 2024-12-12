@@ -13,8 +13,8 @@ using WebApplication1.Data;
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20241211183428_likes")]
-    partial class likes
+    [Migration("20241212173746_commentPost")]
+    partial class commentPost
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -39,6 +39,9 @@ namespace WebApplication1.Migrations
                     b.Property<Guid>("AuthorId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("CommentId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasColumnType("text");
@@ -55,13 +58,15 @@ namespace WebApplication1.Migrations
                     b.Property<Guid?>("ParentId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("PostId")
+                    b.Property<Guid>("PostId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("SubComments")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CommentId");
 
                     b.HasIndex("PostId");
 
@@ -258,9 +263,17 @@ namespace WebApplication1.Migrations
 
             modelBuilder.Entity("WebApplication1.Data.Entities.Comment", b =>
                 {
-                    b.HasOne("WebApplication1.Data.Entities.Post", null)
+                    b.HasOne("WebApplication1.Data.Entities.Comment", null)
+                        .WithMany("SubcommentsList")
+                        .HasForeignKey("CommentId");
+
+                    b.HasOne("WebApplication1.Data.Entities.Post", "Post")
                         .WithMany("Comments")
-                        .HasForeignKey("PostId");
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Post");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.Entities.CommunityUser", b =>
@@ -306,6 +319,11 @@ namespace WebApplication1.Migrations
                     b.Navigation("Post");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("WebApplication1.Data.Entities.Comment", b =>
+                {
+                    b.Navigation("SubcommentsList");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.Entities.Community", b =>

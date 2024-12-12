@@ -41,6 +41,11 @@ namespace WebApplication1.Data
                        j.HasKey(t => new { t.Id });
                        j.ToTable("UserLike");
                    });
+
+            modelBuilder.Entity<Comment>()
+                .HasOne(c => c.Post)
+                .WithMany(p => p.Comments)
+                .HasForeignKey(c => c.PostId);
         }
     }
 }

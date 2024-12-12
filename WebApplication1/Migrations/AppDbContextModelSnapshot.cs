@@ -55,7 +55,7 @@ namespace WebApplication1.Migrations
                     b.Property<Guid?>("ParentId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("PostId")
+                    b.Property<Guid>("PostId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("SubComments")
@@ -264,9 +264,13 @@ namespace WebApplication1.Migrations
                         .WithMany("SubcommentsList")
                         .HasForeignKey("CommentId");
 
-                    b.HasOne("WebApplication1.Data.Entities.Post", null)
+                    b.HasOne("WebApplication1.Data.Entities.Post", "Post")
                         .WithMany("Comments")
-                        .HasForeignKey("PostId");
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Post");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.Entities.CommunityUser", b =>
