@@ -2,6 +2,7 @@
 using WebApplication1.AuthentificationServices;
 using WebApplication1.Data;
 using WebApplication1.Data.DTO;
+using WebApplication1.Data.Entities;
 using WebApplication1.Data.Enums;
 using WebApplication1.Services.IServices;
 
@@ -41,19 +42,20 @@ namespace WebApplication1.Services
                         objectGuid = a.objectguid,
                         text = a.typename + " " + a.name,
                         objectLevel = (GarAddressLevel)(Int32.Parse(a.level)),
-                        objectLevelText = GetText((GarAddressLevel)(Int32.Parse(a.level) - 1))
+                        objectLevelText = GetAddressText((GarAddressLevel)(Int32.Parse(a.level) - 1))
                     })
                     .ToListAsync();
 
                 var childHouses = _db.Houses.Where(h => childObjectIds.Contains(h.objectid));
+
                 houseAddressses = await childHouses
-                    .Select(a => new SearchAddressModel
+                    .Select(h => new SearchAddressModel
                     {
-                        objectId = a.objectid,
-                        objectGuid = a.objectguid,
-                        text = a.housenum,
+                        objectId = h.objectid,
+                        objectGuid = h.objectguid,
+                        text = BuildHouseName(h),
                         objectLevel = GarAddressLevel.Building,
-                        objectLevelText = GetText(GarAddressLevel.Building)
+                        objectLevelText = GetAddressText(GarAddressLevel.Building)
                     })
                     .ToListAsync();
             }
@@ -80,9 +82,9 @@ namespace WebApplication1.Services
                 {
                     objectId = childHouse.objectid,
                     objectGuid = childHouse.objectguid,
-                    text = childHouse.housenum,
+                    text = BuildHouseName(childHouse),
                     objectLevel = GarAddressLevel.Building,
-                    objectLevelText = GetText(GarAddressLevel.Building)
+                    objectLevelText = GetAddressText(GarAddressLevel.Building)
                 });
             }
 
@@ -96,7 +98,7 @@ namespace WebApplication1.Services
                     objectGuid = address.objectguid,
                     text = address.typename + " " + address.name,
                     objectLevel = (GarAddressLevel)(Int32.Parse(address.level)),
-                    objectLevelText = GetText((GarAddressLevel)(Int32.Parse(address.level) - 1))
+                    objectLevelText = GetAddressText((GarAddressLevel)(Int32.Parse(address.level) - 1))
                 };
 
                 while (newAddressModel != null) 
@@ -120,7 +122,7 @@ namespace WebApplication1.Services
                             objectGuid = address.objectguid,
                             text = address.typename + " " + address.name,
                             objectLevel = (GarAddressLevel)(Int32.Parse(address.level)),
-                            objectLevelText = GetText((GarAddressLevel)(Int32.Parse(address.level) - 1))
+                            objectLevelText = GetAddressText((GarAddressLevel)(Int32.Parse(address.level) - 1))
                         };
 
                         addressses.Add(newAddressModel);
@@ -158,10 +160,37 @@ namespace WebApplication1.Services
             { GarAddressLevel.LevelOfObjectsInAdditionalTerritories, "Уровень объектов на дополнительных территориях" },
             { GarAddressLevel.CarPlace, "Машиноместо" }
         };
+        private static readonly Dictionary<int?, string> HouseTexts = new()
+        {
+            { 1, "к." },
+            { 2, "стр." },
+            { 3, "соор." },
+            { 4, "лит." }
+        };
 
-        public static string GetText(GarAddressLevel level) =>
+        public static string GetAddressText(GarAddressLevel level) =>
             LevelTexts.TryGetValue(level, out var text) ? text : "Неизвестный уровень";
+        public static string GetHouseText(int? level) =>
+            HouseTexts.TryGetValue(level, out var text) ? text : "Неизвестный уровень";
 
+        public static string BuildHouseName(House house)
+        {
+            var houseName = "";
 
+            if (!String.IsNullOrEmpty(house.housenum))
+            {
+                houseName += house.housenum;
+            }
+            if (house.addtype1.HasValue)
+            {
+                houseName +=  " " + GetHouseText(house.addtype1) + " "+ house.addnum1;
+            }
+            if (house.addtype2.HasValue)
+            {
+                houseName += " " + GetHouseText(house.addtype2) + " " + house.addnum2;
+            }
+
+            return houseName;
+        }
     }
 }

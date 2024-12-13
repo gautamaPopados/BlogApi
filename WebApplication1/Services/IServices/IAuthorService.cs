@@ -2,8 +2,8 @@
 
 namespace WebApplication1.Services.IServices
 {
-    public interface ITagService
+    public interface IAuthorService
     {
-        public Task<List<TagDto>> GetTagList();
+        public Task<List<AuthorDto>> GetAuthors();
     }
 }

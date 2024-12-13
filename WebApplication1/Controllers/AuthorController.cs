@@ -16,98 +16,33 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace WebApplication1.Controllers
 {
-    [Route("api")]
+    [Route("api/author")]
     [ApiController]
-    public class CommentController : Controller
+    public class AuthorController : Controller
     {
-        private readonly ICommentService _commentService;
-        private readonly ILogger<PostController> _logger;
+        private readonly IAuthorService _authorService;
+        private readonly ILogger<AuthorController> _logger;
 
-        public CommentController(ICommentService addressService, ILogger<PostController> logger)
+        public AuthorController(IAuthorService authorService, ILogger<AuthorController> logger)
         {
-            _commentService = addressService;
+            _authorService = authorService;
             _logger = logger;
         }
 
         /// <summary>
-        /// Create a comment to a concrete post 
+        /// Get authors
         /// </summary>
 
-        [ProducesResponseType(200)]
-        [ProducesResponseType(typeof(ExceptionResponse), 400)]
-        [ProducesResponseType(typeof(ExceptionResponse), 401)]
-        [ProducesResponseType(typeof(ExceptionResponse), 403)]
-        [ProducesResponseType(typeof(ExceptionResponse), 404)]
-        [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [Authorize]
-        [HttpPost("post/{id}/comment")]
-        public async Task<IActionResult> CreateComment([FromBody] CreateCommentDto model, Guid id)
-        {
-            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-
-            await _commentService.CreateComment(model, token, id);
-
-            return Ok();
-        }
-
-        /// <summary>
-        /// Update comment
-        /// </summary>
-
-        [ProducesResponseType(200)]
-        [ProducesResponseType(typeof(ExceptionResponse), 400)]
-        [ProducesResponseType(typeof(ExceptionResponse), 401)]
-        [ProducesResponseType(typeof(ExceptionResponse), 403)]
-        [ProducesResponseType(typeof(ExceptionResponse), 404)]
-        [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [Authorize]
-        [HttpPut("comment/{id}")]
-        public async Task<IActionResult> UpdateComment([FromBody] UpdateCommentDto model, Guid id)
-        {
-            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-
-            await _commentService.UpdateComment(model, token, id);
-
-            return Ok();
-        }
-
-        /// <summary>
-        /// Delete comment
-        /// </summary>
-
-        [ProducesResponseType(200)]
-        [ProducesResponseType(typeof(ExceptionResponse), 400)]
-        [ProducesResponseType(typeof(ExceptionResponse), 401)]
-        [ProducesResponseType(typeof(ExceptionResponse), 403)]
-        [ProducesResponseType(typeof(ExceptionResponse), 404)]
-        [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [Authorize]
-        [HttpDelete("comment/{id}")]
-        public async Task<IActionResult> DeleteComment(Guid id)
-        {
-            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-
-            await _commentService.DeleteComment(token, id);
-
-            return Ok();
-        }
-
-        /// <summary>
-        /// Get nested tree
-        /// </summary>
-
-        [ProducesResponseType(typeof(List<CommentDto>),200)]
-        [ProducesResponseType(typeof(ExceptionResponse), 400)]
-        [ProducesResponseType(typeof(ExceptionResponse), 404)]
+        [ProducesResponseType(typeof(List<AuthorDto>), 200)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
         [AllowAnonymous]
-        [HttpGet("comment/{id}/tree")]
-        public async Task<IActionResult> GetTree(Guid id)
+        [HttpGet("list")]
+        public async Task<IActionResult> GetAuthors()
         {
-            var tree = await _commentService.GetTree(id);
 
-            return Ok(tree);
+            return Ok(_authorService.GetAuthors());
+
+
         }
-       
     }
 }

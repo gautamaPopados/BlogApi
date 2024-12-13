@@ -23,9 +23,9 @@ namespace WebApplication1.Controllers
         private readonly ICommentService _commentService;
         private readonly ILogger<PostController> _logger;
 
-        public CommentController(ICommentService addressService, ILogger<PostController> logger)
+        public CommentController(ICommentService commentService, ILogger<PostController> logger)
         {
-            _commentService = addressService;
+            _commentService = commentService;
             _logger = logger;
         }
 
