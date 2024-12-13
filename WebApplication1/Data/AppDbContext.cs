@@ -11,6 +11,7 @@ namespace WebApplication1.Data
         public DbSet<Community> Communities { set; get; }
         public DbSet<Comment> Comments { set; get; }
         public DbSet<Post> Posts { set; get; }
+        public DbSet<EmailQueue> EmailQueue { set; get; }
 
         public DbSet<Tag> Tags { set; get; }
 

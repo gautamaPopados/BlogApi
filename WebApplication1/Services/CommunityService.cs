@@ -14,11 +14,13 @@ namespace WebApplication1.Services
     {
         private readonly AppDbContext _db;
         private readonly TokenService _tokenService;
+        private readonly IEmailService _emailService;
 
-        public CommunityService(AppDbContext db, IConfiguration configuration, TokenService tokenService)
+        public CommunityService(AppDbContext db, IConfiguration configuration, TokenService tokenService, IEmailService emailService)
         {
             _db = db;
             _tokenService = tokenService;
+            _emailService = emailService;
         }
 
         public async Task<List<CommunityDto>> GetCommunities()
@@ -219,7 +221,7 @@ namespace WebApplication1.Services
                 throw new NotFoundException("Non-existent user");
             }
 
-            var community = await _db.Communities.FirstOrDefaultAsync(c => c.Id == communityId);
+            var community = await _db.Communities.Include(c => c.Users).FirstOrDefaultAsync(c => c.Id == communityId);
 
             if (community == null)
             {
@@ -265,6 +267,13 @@ namespace WebApplication1.Services
             
             _db.Posts.Add(post);
             await _db.SaveChangesAsync();
+
+            var emails = community.Users.Select(u => u.Email);
+
+            foreach (var email in emails)
+            {
+                await _emailService.SendEmailAsync(email, $"New post in {community.Name}", $"Check out new post {post.Title}");
+            }
 
             return post.Id;
         }

@@ -10,6 +10,9 @@ using Microsoft.AspNetCore.Authorization;
 using WebApplication1.AuthentificationServices;
 using WebApplication1.Data;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Quartz;
+using WebApplication1.Jobs;
+using MailKit.Net.Smtp;
 
 var builder = WebApplication.CreateBuilder(args);
 var tokenLifetimeManager = new JwtTokenLifetimeManager();
@@ -17,6 +20,8 @@ var tokenLifetimeManager = new JwtTokenLifetimeManager();
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddDbContext<AddressContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("AddressConnection")));
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<SmtpClient>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ICommunityService, CommunityService>();
 builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IAddressService, AddressService>();
@@ -120,6 +125,22 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
+
+builder.Services.AddQuartz(q =>
+{
+    q.UseMicrosoftDependencyInjectionJobFactory();
+    var jobKey = new JobKey("EmailNotificationJob");
+    q.AddJob<EmailNotificationJob>(opts => opts.WithIdentity(jobKey));
+    q.AddTrigger(opts => opts
+        .ForJob(jobKey)
+        .WithIdentity("EmailNotificationTrigger")
+        .StartNow()
+        .WithSimpleSchedule(x => x
+            .WithIntervalInSeconds(30) 
+            .RepeatForever()));
+});
+
+builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
 builder.Services.AddControllersWithViews()
     .AddViewLocalization()
