@@ -1,22 +1,26 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data.DTO;
 using WebApplication1.Data.Entities;
 
 namespace WebApplication1.Data
 {
-    public class AppDbContext : DbContext
+    public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid, IdentityUserClaim<Guid>,
+    IdentityUserRole<Guid>, IdentityUserLogin<Guid>, IdentityRoleClaim<Guid>, IdentityUserToken<Guid>>
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
-        public DbSet<User> Users { set; get; }
+        public DbSet<User> Users { set; get; } = null!;
         public DbSet<Community> Communities { set; get; }
         public DbSet<Comment> Comments { set; get; }
         public DbSet<Post> Posts { set; get; }
         public DbSet<EmailQueue> EmailQueue { set; get; }
-
         public DbSet<Tag> Tags { set; get; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
             modelBuilder
                 .Entity<Community>()
                 .HasMany(c => c.Users)

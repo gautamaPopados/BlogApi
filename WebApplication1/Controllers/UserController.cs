@@ -1,15 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Swashbuckle.AspNetCore.Filters;
-using System.IdentityModel.Tokens.Jwt;
-using System.Net;
-using WebApplication1.AuthentificationServices;
-using WebApplication1.Data.DTO;
-using WebApplication1.Exceptions;
+using System.Security.Claims;
+using WebApplication1.Data.BannedToken;
+using WebApplication1.Data.DTO.Auth;
+using WebApplication1.Data.DTO.User;
 using WebApplication1.Middleware;
 using WebApplication1.Services.IServices;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace WebApplication1.Controllers
 {
@@ -18,30 +14,25 @@ namespace WebApplication1.Controllers
     public class UserController : Controller
     {
         private readonly IUserService _userService;
-        private readonly ILogger<UserController> _logger;
-        private ITokenLifetimeManager _jwtTokenLifetimeManager;
-
-        public UserController(IUserService userService, ILogger<UserController> logger, ITokenLifetimeManager lifetimeManager)
+        private readonly ITokenService _tokenService;
+        public UserController(IUserService userService, ITokenService tokenService)
         {
-            _jwtTokenLifetimeManager = lifetimeManager;
             _userService = userService;
-            _logger = logger;
+            _tokenService = tokenService;
         }
 
         /// <summary>
         /// Log in to the system
         /// </summary>
-        
+
         [ProducesResponseType(typeof(TokenResponse), 200)]
         [ProducesResponseType(typeof(ExceptionResponse), 400)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
         [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginCredentials model)
-        {
-            var loginResponse = await _userService.Login(model);
-
-            return Ok(loginResponse);
+        public async Task<IActionResult> Login([FromBody] LoginRequestDTO model)
+        { 
+            return Ok(await _userService.Login(model));
         }
 
         /// <summary>
@@ -52,11 +43,9 @@ namespace WebApplication1.Controllers
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
         [AllowAnonymous]
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] UserRegistrationModel model)
+        public async Task<IActionResult> Register([FromBody] RegistrationRequestDTO model)
         {
-            var RegisterResponse = await _userService.Register(model);
-
-            return Ok(RegisterResponse);
+            return Ok(await _userService.Register(model));
         }
 
         /// <summary>
@@ -65,36 +54,32 @@ namespace WebApplication1.Controllers
         [ProducesResponseType(typeof(ExceptionResponse), 400)]
         [ProducesResponseType(typeof(ExceptionResponse), 401)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        [ServiceFilter(typeof(TokenBlacklistFilterAttribute))]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
             var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-
-             await _userService.Logout(token);
-            System.Diagnostics.Debug.WriteLine("JWt logout token = " + token);
-
-
-            if (string.IsNullOrWhiteSpace(token)) return Ok();
-            _jwtTokenLifetimeManager.SignOut(new JwtSecurityToken(token));
-
+            await _userService.Logout(token);
             return Ok();
         }
 
         /// <summary>
         /// Get user profile
         /// </summary>
-        [ProducesResponseType(typeof(UserDto), 200)]
+        [ProducesResponseType(typeof(ProfileResponseDTO), 200)]
         [ProducesResponseType(typeof(ExceptionResponse), 400)]
         [ProducesResponseType(typeof(ExceptionResponse), 401)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        [ServiceFilter(typeof(TokenBlacklistFilterAttribute))]
         [HttpGet("profile")]
-        public async Task<ActionResult<UserDto>> GetProfile()
+        public async Task<ActionResult<ProfileResponseDTO>> GetProfile()
         {
-            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            var userId = userIdClaim.Value;
 
-             var profileResponse = await _userService.GetProfile(token);
+            var profileResponse = await _userService.GetProfile(Guid.Parse(userId));
 
             return Ok(profileResponse);
         }
@@ -102,22 +87,30 @@ namespace WebApplication1.Controllers
         /// <summary>
         /// Edit user profile
         /// </summary>
-        [ProducesResponseType(typeof(UserDto), 200)]
+        [ProducesResponseType(typeof(ProfileResponseDTO), 200)]
         [ProducesResponseType(typeof(ExceptionResponse), 400)]
         [ProducesResponseType(typeof(ExceptionResponse), 401)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        [ServiceFilter(typeof(TokenBlacklistFilterAttribute))]
         [HttpPut("profile")]
-        public async Task<ActionResult<UserDto>> EditProfile([FromBody] UserEditModel model)
+        public async Task<ActionResult<ProfileResponseDTO>> EditProfile([FromBody] ChangeProfileRequestDTO model)
         {
-            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            var userId = userIdClaim.Value;
 
-            await _userService.Edit(token, model);
+            await _userService.ChangeProfileInfo(Guid.Parse(userId), model);
 
             return Ok();
         }
 
-        
+        [HttpPost("refresh")]
+        [ProducesResponseType(typeof(RefreshedToken), 200)]
+        [ProducesResponseType(typeof(ExceptionResponse), 404)]
+        public async Task<ActionResult<AuthResponseDTO>> RefreshAsync([FromBody] RefreshTokenRequestDTO refreshToken)
+        {
+            return Ok(await _tokenService.Refresh(refreshToken.token));
+        }
 
 
     }

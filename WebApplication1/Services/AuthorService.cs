@@ -1,7 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
-using WebApplication1.AuthentificationServices;
-using WebApplication1.Data;
-using WebApplication1.Data.DTO;
+﻿using WebApplication1.Data;
+using WebApplication1.Data.DTO.Post;
 using WebApplication1.Services.IServices;
 
 namespace WebApplication1.Services

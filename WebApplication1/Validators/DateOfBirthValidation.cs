@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using WebApplication1.Data.Enums;
 
 namespace WebApplication1.Validators
 {

@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNet.Identity;
 using Microsoft.EntityFrameworkCore;
-using WebApplication1.AuthentificationServices;
 using WebApplication1.Data;
-using WebApplication1.Data.DTO;
+using WebApplication1.Data.DTO.Comment;
+using WebApplication1.Data.DTO.Community;
 using WebApplication1.Data.Entities;
 using WebApplication1.Exceptions;
 using WebApplication1.Services.IServices;
@@ -13,9 +13,9 @@ namespace WebApplication1.Services
     public class CommentService : ICommentService
     {
         private readonly AppDbContext _db;
-        private readonly TokenService _tokenService;
+        private readonly ITokenService _tokenService;
 
-        public CommentService(AppDbContext db, TokenService tokenService, IConfiguration configuration)
+        public CommentService(AppDbContext db, ITokenService tokenService, IConfiguration configuration)
         {
             _db = db;
             _tokenService = tokenService;
@@ -24,7 +24,7 @@ namespace WebApplication1.Services
 
         public async Task CreateComment(CreateCommentDto model, string token, Guid id)
         {
-            Guid userId = new Guid(_tokenService.GetUserId(token));
+            var userId = _tokenService.GetUserIdFromToken(token);
             var user = await _db.Users.Include(user => user.Communities).Include(user => user.UserLikes).FirstOrDefaultAsync(user => user.Id == userId);
 
             if (user == null)
@@ -93,7 +93,7 @@ namespace WebApplication1.Services
 
         public async Task DeleteComment(string token, Guid id)
         {
-            Guid userId = new Guid(_tokenService.GetUserId(token));
+            var userId = _tokenService.GetUserIdFromToken(token);
             var user = await _db.Users.Include(user => user.Communities).Include(user => user.UserLikes).FirstOrDefaultAsync(user => user.Id == userId);
 
             if (user == null)
@@ -205,7 +205,7 @@ namespace WebApplication1.Services
 
         public async Task UpdateComment(UpdateCommentDto model, string token, Guid id)
         {
-            Guid userId = new Guid(_tokenService.GetUserId(token));
+            var userId = _tokenService.GetUserIdFromToken(token);
             var user = await _db.Users.Include(user => user.Communities).Include(user => user.UserLikes).FirstOrDefaultAsync(user => user.Id == userId);
 
             if (user == null)

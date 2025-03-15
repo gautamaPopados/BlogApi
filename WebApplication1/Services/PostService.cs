@@ -1,7 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using WebApplication1.AuthentificationServices;
 using WebApplication1.Data;
 using WebApplication1.Data.DTO;
+using WebApplication1.Data.DTO.Community;
+using WebApplication1.Data.DTO.Post;
 using WebApplication1.Data.Entities;
 using WebApplication1.Data.Enums;
 using WebApplication1.Exceptions;
@@ -13,9 +14,9 @@ namespace WebApplication1.Services
     public class PostService : IPostService
     {
         private readonly AppDbContext _db;
-        private readonly TokenService _tokenService;
+        private readonly ITokenService _tokenService;
 
-        public PostService(AppDbContext db, TokenService tokenService, IConfiguration configuration)
+        public PostService(AppDbContext db, ITokenService tokenService, IConfiguration configuration)
         {
             _db = db;
             _tokenService = tokenService;
@@ -23,7 +24,7 @@ namespace WebApplication1.Services
 
         public async Task AddLike(Guid id, string token)
         {
-            Guid userId = new Guid(_tokenService.GetUserId(token));
+            var userId = _tokenService.GetUserIdFromToken(token);
             var user = await _db.Users.Include(user => user.UserLikes).FirstOrDefaultAsync(user => user.Id == userId);
 
             if (user == null)
@@ -59,7 +60,7 @@ namespace WebApplication1.Services
         }
         public async Task Dislike(Guid id, string token)
         {
-            Guid userId = new Guid(_tokenService.GetUserId(token));
+            var userId = _tokenService.GetUserIdFromToken(token);
             var user = await _db.Users.Include(user => user.UserLikes).FirstOrDefaultAsync(user => user.Id == userId);
 
             if (user == null)
@@ -91,7 +92,7 @@ namespace WebApplication1.Services
 
         public async Task<Guid> Create(string token, CreatePostDto model)
         {
-            Guid userId = new Guid(_tokenService.GetUserId(token));
+            var userId = _tokenService.GetUserIdFromToken(token);
             var user = await _db.Users.FirstOrDefaultAsync(user => user.Id == userId);
 
             if (user == null)
@@ -134,7 +135,7 @@ namespace WebApplication1.Services
 
         public async Task<PostFullDto> GetPostById(Guid id, string token)
         {
-            Guid userId = new Guid(_tokenService.GetUserId(token));
+            var userId = _tokenService.GetUserIdFromToken(token);
             var user = await _db.Users.Include(user => user.Communities).FirstOrDefaultAsync(user => user.Id == userId);
 
             if (user == null)
@@ -217,7 +218,7 @@ namespace WebApplication1.Services
             if (!String.IsNullOrEmpty(token))
             {
 
-                userId = new Guid(_tokenService.GetUserId(token));
+                userId = _tokenService.GetUserIdFromToken(token);
                 user = await _db.Users.Include(user => user.Communities).FirstOrDefaultAsync(user => user.Id == userId);
             }
 

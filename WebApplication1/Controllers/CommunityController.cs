@@ -5,8 +5,9 @@ using Swashbuckle.AspNetCore.Filters;
 using System.Diagnostics.CodeAnalysis;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
-using WebApplication1.AuthentificationServices;
-using WebApplication1.Data.DTO;
+using WebApplication1.Data.BannedToken;
+using WebApplication1.Data.DTO.Community;
+using WebApplication1.Data.DTO.Post;
 using WebApplication1.Data.Enums;
 using WebApplication1.Exceptions;
 using WebApplication1.Middleware;
@@ -23,7 +24,7 @@ namespace WebApplication1.Controllers
         private readonly ICommunityService _communityService;
         private readonly ILogger<CommunityController> _logger;
 
-        public CommunityController(ICommunityService communityService, ILogger<CommunityController> logger, ITokenLifetimeManager lifetimeManager)
+        public CommunityController(ICommunityService communityService, ILogger<CommunityController> logger)
         {
             _communityService = communityService;
             _logger = logger;
@@ -67,7 +68,8 @@ namespace WebApplication1.Controllers
         [ProducesResponseType(typeof(ExceptionResponse), 401)]
         [ProducesResponseType(typeof(ExceptionResponse), 404)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        [ServiceFilter(typeof(TokenBlacklistFilterAttribute))]
         [HttpPost("{id}/subscribe")]
         public async Task<ActionResult> Subscribe(Guid id)
         {
@@ -85,7 +87,8 @@ namespace WebApplication1.Controllers
         [ProducesResponseType(typeof(ExceptionResponse), 401)]
         [ProducesResponseType(typeof(ExceptionResponse), 404)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        [ServiceFilter(typeof(TokenBlacklistFilterAttribute))]
         [HttpGet("{id}/role")]
         public async Task<ActionResult> GetGreatestRole(Guid id)
         {
@@ -104,7 +107,7 @@ namespace WebApplication1.Controllers
         [ProducesResponseType(typeof(ExceptionResponse), 401)]
         [ProducesResponseType(typeof(ExceptionResponse), 404)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = "Bearer")]
         [HttpDelete("{id}/unsubscribe")]
         public async Task<ActionResult> Unsubscribe(Guid id)
         {
@@ -121,7 +124,8 @@ namespace WebApplication1.Controllers
         [ProducesResponseType(typeof(CommunityFullDto), 200)]
         [ProducesResponseType(typeof(ExceptionResponse), 404)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        [ServiceFilter(typeof(TokenBlacklistFilterAttribute))]
         [HttpGet("my")]
         public async Task<IActionResult> GetUserCommunities()
         {
@@ -142,7 +146,8 @@ namespace WebApplication1.Controllers
         [ProducesResponseType(typeof(ExceptionResponse), 403)]
         [ProducesResponseType(typeof(ExceptionResponse), 404)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        [ServiceFilter(typeof(TokenBlacklistFilterAttribute))]
         [HttpPost("{id}/post")]
         public async Task<IActionResult> CreatePost([FromBody] CreatePostDto model, Guid id)
         {

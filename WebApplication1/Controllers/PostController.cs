@@ -1,18 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Swashbuckle.AspNetCore.Filters;
-using System.Diagnostics.CodeAnalysis;
-using System.IdentityModel.Tokens.Jwt;
-using System.Net;
-using WebApplication1.AuthentificationServices;
-using WebApplication1.Data.DTO;
+using WebApplication1.Data.BannedToken;
+using WebApplication1.Data.DTO.Post;
 using WebApplication1.Data.Enums;
-using WebApplication1.Exceptions;
 using WebApplication1.Middleware;
-using WebApplication1.Services;
 using WebApplication1.Services.IServices;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace WebApplication1.Controllers
 {
@@ -38,7 +30,7 @@ namespace WebApplication1.Controllers
         [ProducesResponseType(typeof(ExceptionResponse), 401)]
         [ProducesResponseType(typeof(ExceptionResponse), 404)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = "Bearer")]
         [HttpPost("")]
         public async Task<IActionResult> CreatePost([FromBody] CreatePostDto model)
         {
@@ -83,7 +75,8 @@ namespace WebApplication1.Controllers
         [ProducesResponseType(typeof(ExceptionResponse), 403)]
         [ProducesResponseType(typeof(ExceptionResponse), 404)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        [ServiceFilter(typeof(TokenBlacklistFilterAttribute))]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetPostById(Guid id)
         {
@@ -102,7 +95,8 @@ namespace WebApplication1.Controllers
         [ProducesResponseType(typeof(ExceptionResponse), 401)]
         [ProducesResponseType(typeof(ExceptionResponse), 404)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        [ServiceFilter(typeof(TokenBlacklistFilterAttribute))]
         [HttpPost("{id}/like")]
         public async Task<IActionResult> AddLike(Guid id)
         {
@@ -121,7 +115,8 @@ namespace WebApplication1.Controllers
         [ProducesResponseType(typeof(ExceptionResponse), 401)]
         [ProducesResponseType(typeof(ExceptionResponse), 404)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        [ServiceFilter(typeof(TokenBlacklistFilterAttribute))]
         [HttpDelete("{id}/like")]
         public async Task<IActionResult> Dislike(Guid id)
         {

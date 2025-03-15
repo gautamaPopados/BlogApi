@@ -1,7 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
-using WebApplication1.AuthentificationServices;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Crypto;
 using WebApplication1.Data;
-using WebApplication1.Data.DTO;
+using WebApplication1.Data.BannedToken;
+using WebApplication1.Data.DTO.Auth;
+using WebApplication1.Data.DTO.User;
 using WebApplication1.Data.Entities;
 using WebApplication1.Exceptions;
 using WebApplication1.Services.IServices;
@@ -10,19 +14,28 @@ namespace WebApplication1.Services
 {
     public class UserService : IUserService
     {
-        private readonly AppDbContext _db;
-        private readonly TokenService _tokenService;
+        private readonly ITokenService _tokenService;
+        private readonly UserManager<User> _userManager;
+        private readonly RedisRepository _redisRepository;
+        private readonly SignInManager<User> _signInManager;
 
-        public UserService(AppDbContext db, IConfiguration configuration, TokenService tokenService)
+        public UserService(
+            ITokenService tokenService,
+            UserManager<User> userManager,
+            RedisRepository redisRepository,
+            SignInManager<User> signInManager
+        )
         {
-            _db = db;
             _tokenService = tokenService;
+            _userManager = userManager;
+            _redisRepository = redisRepository;
+            _signInManager = signInManager;
         }
 
-        public bool IsUniqueUser(string email)
+        public async Task<bool> IsUniqueUser(string email)
         {
-            var user = _db.Users.FirstOrDefault(x => x.Email == email);
-            
+            var user = await _userManager.FindByEmailAsync( email );
+
             if (user == null)
             {
                 return true;
@@ -30,10 +43,11 @@ namespace WebApplication1.Services
             return false;
         }
 
-        public bool IsUniquePhoneNumber(string phoneNumber)
+        public async Task<bool> IsUniquePhoneNumber(string phoneNumber)
         {
-            var user = _db.Users.FirstOrDefault(x => x.PhoneNumber == phoneNumber);
-            
+            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber);
+
+
             if (user == null)
             {
                 return true;
@@ -41,135 +55,149 @@ namespace WebApplication1.Services
             return false;
         }
 
-        public async Task<TokenResponse> Login(LoginCredentials loginRequestDTO)
+        public async Task<AuthResponseDTO> Login(LoginRequestDTO loginData)
         {
-            var user = _db.Users.FirstOrDefault(u => u.Email == loginRequestDTO.email);
+            var user = await _userManager.FindByEmailAsync(loginData.Email);
 
-            if (user == null)
+            var result = await _signInManager.CheckPasswordSignInAsync(user, loginData.Password, lockoutOnFailure: false);
+
+            if (result.Succeeded)
             {
-                throw new BadRequestException("email or password is incorrect");
-            }
-            else if (!BCrypt.Net.BCrypt.Verify(loginRequestDTO.password, user.Password))
-            {
-                throw new BadRequestException("email or password is incorrect");
-            }
+                var accessToken = await _tokenService.GenerateAccessToken(user.Id);
+                var refreshToken = await _tokenService.GenerateRefreshToken(user.Id);
 
-            
-            var token = _tokenService.GenerateToken(user);
+                await _tokenService.SaveRefreshTokenAsync(refreshToken.Token, user.Id);
 
-            TokenResponse loginResponseDTO = new TokenResponse()
-            {
-                token = token,
-            };
-            return loginResponseDTO;
-        }
-
-        public Task Logout(string token)
-        {
-            if (string.IsNullOrEmpty(token))
-            {
-                throw new UnauthorizedAccessException();
-            }
-
-            return Task.CompletedTask;
-        }
-
-
-        public async Task<TokenResponse> Register(UserRegistrationModel registrationRequestDTO)
-        {
-
-            if (!IsUniqueUser(registrationRequestDTO.email))
-            {
-                throw new BadRequestException($"Username '{registrationRequestDTO.email}' is already taken.");
-            }
-
-            User user = new User()
-            {
-                FullName = registrationRequestDTO.fullName,
-                Email = registrationRequestDTO.email,
-                Password = BCrypt.Net.BCrypt.HashPassword(registrationRequestDTO.password),
-                BirthDate = registrationRequestDTO.birthDate,
-                CreateTime = DateTime.UtcNow,
-                Gender = registrationRequestDTO.gender,
-                PhoneNumber = registrationRequestDTO.phoneNumber
-            };
-
-            _db.Users.Add(user);
-            await _db.SaveChangesAsync();
-
-            user.Password = "";
-
-            var token = _tokenService.GenerateToken(user);
-
-            TokenResponse loginResponseDTO = new TokenResponse()
-            {
-                token = token,
-            };
-
-            return loginResponseDTO;
-
-        }
-
-        public async Task<UserDto> GetProfile(string token)
-        {
-            string id = _tokenService.GetUserId(token);
-
-            if (!string.IsNullOrEmpty(id))
-            {
-                var user = await _db.Users.FirstOrDefaultAsync(user => user.Id.ToString() == id);
-
-                if (user != null)
+                var tokenPair = new AuthResponseDTO
                 {
-                    UserDto profileResponseDTO = new UserDto()
-                    {
-                        id = user.Id,
-                        birthDate = user.BirthDate,
-                        gender = user.Gender,
-                        phoneNumber = user.PhoneNumber,
-                        fullName = user.FullName,
-                        email = user.Email,
-                        createTime = user.CreateTime
-                    };
-
-                    return profileResponseDTO;
-                }
-                else throw new NotFoundException("User not found.");
+                    AccessToken = accessToken,
+                    RefreshToken = refreshToken.Token,
+                };
+                
+                return tokenPair;
             }
+            else
+            {
+                throw new BadRequestException("Неверный логин или пароль");
+            }
+        }
+
+        public async Task Logout(string accessToken)
+        {
+            var userId = _tokenService.GetUserIdFromToken(accessToken);
+
+            var user = await _userManager.Users.FirstOrDefaultAsync(user => user.Id == userId);
+            if (user == null)
+            {
+                throw new NotFoundException("Такого пользователя не существует");
+            }
+
+            user.RefreshToken = null;
+            await _userManager.UpdateAsync(user);
+            await _redisRepository.AddTokenBlackList(accessToken);
+        }
+
+        public async Task<AuthResponseDTO> Register(RegistrationRequestDTO registrationData)
+        {
+            User newUser = new User()
+            {
+                FullName = registrationData.fullName,
+                Email = registrationData.email,
+                BirthDate = registrationData.birthDate,
+                CreateTime = DateTime.UtcNow,
+                Gender = registrationData.gender,
+                PhoneNumber = registrationData.phoneNumber,
+            };
+            newUser.UserName = newUser.Email;
+            newUser.SecurityStamp = Guid.NewGuid().ToString();
+
+            var creatingResult = await _userManager.CreateAsync(newUser, registrationData.password);
+
+            if (creatingResult.Succeeded)
+            {
+                var loginData = new LoginRequestDTO
+                {
+                    Email = registrationData.email,
+                    Password = registrationData.password,
+                };
+
+                var tokenInfo = await Login(loginData);
+
+                return tokenInfo;
+            }
+            else
+            {
+                
+                var errors = creatingResult.Errors.Select(error => error.Description);
+                var errorMessage = string.Join(", ", errors);
+                throw new BadRequestException($"Ошибка при регистрации: {errorMessage}");
+            }
+        }
+
+
+        public async Task<ProfileResponseDTO> GetProfile(Guid userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+
+            if (user != null)
+            {
+                ProfileResponseDTO profileResponseDTO = new ProfileResponseDTO()
+                {
+                    id = user.Id,
+                    birthDate = user.BirthDate,
+                    gender = user.Gender,
+                    phoneNumber = user.PhoneNumber,
+                    fullName = user.FullName,
+                    email = user.Email,
+                    createTime = user.CreateTime
+                };
+
+                return profileResponseDTO;
+            }
+            else throw new NotFoundException("User not found.");
+            
 
             throw new UnauthorizedAccessException();   
         }
 
-        public async Task Edit(string token, UserEditModel model)
+        public async Task ChangeProfileInfo(Guid userId, ChangeProfileRequestDTO newProfileInfo)
         {
-            string id = _tokenService.GetUserId(token);
+            var user = await _userManager.FindByIdAsync(userId.ToString());
 
-            if (!IsUniqueUser(model.email))
+            if (user == null)
+                throw new NotFoundException("Такого пользователя не существует");
+
+            if (! await IsUniqueUser(newProfileInfo.email))
             {
-                throw new BadRequestException($"Username '{model.email}' is already taken.");
+                throw new BadRequestException($"Username '{newProfileInfo.email}' is already taken.");
             }
 
-            if (!IsUniquePhoneNumber(model.phoneNumber))
+            if (! await IsUniquePhoneNumber(newProfileInfo.phoneNumber))
             {
-                throw new BadRequestException($"Phone Number '{model.phoneNumber}' is already taken.");
+                throw new BadRequestException($"Phone Number '{newProfileInfo.phoneNumber}' is already taken.");
             }
 
-            if (!string.IsNullOrEmpty(id))
+            user.PhoneNumber = newProfileInfo.phoneNumber;
+            user.FullName = newProfileInfo.fullName;
+            user.BirthDate = newProfileInfo.birthDate;
+            user.Gender = newProfileInfo.gender;
+            user.Email = newProfileInfo.email;
+
+            //await SyncProfileInfo(userId, newProfileInfo.fullName, newProfileInfo.email);
+
+            user.SecurityStamp = Guid.NewGuid().ToString();
+
+            var result = await _userManager.UpdateAsync(user);
+
+            if (result.Succeeded)
             {
-                var user = await _db.Users.FirstOrDefaultAsync(user => user.Id.ToString() == id);
-
-                if (user != null)
-                {
-                    user.PhoneNumber = model.phoneNumber;
-                    user.FullName = model.fullName;
-                    user.BirthDate = model.birthDate;
-                    user.Gender = model.gender;
-                    user.Email = model.email;
-
-                    await _db.SaveChangesAsync();
-                }
-                else throw new NotFoundException("User not found.");
+                return;
             }
-            else throw new UnauthorizedAccessException();
+            else
+            {
+                throw new BadRequestException($"{result}");
+            }
         }
+
     }
 }

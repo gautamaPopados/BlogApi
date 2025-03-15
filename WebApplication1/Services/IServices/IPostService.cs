@@ -1,4 +1,4 @@
-﻿using WebApplication1.Data.DTO;
+﻿using WebApplication1.Data.DTO.Post;
 using WebApplication1.Data.Enums;
 
 namespace WebApplication1.Services.IServices

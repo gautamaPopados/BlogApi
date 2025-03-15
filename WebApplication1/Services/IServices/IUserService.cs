@@ -1,13 +1,15 @@
-﻿using WebApplication1.Data.DTO;
+﻿using WebApplication1.Data.DTO.Auth;
+using WebApplication1.Data.DTO.User;
 
 namespace WebApplication1.Services.IServices;
 
 public interface IUserService
 {
-    public bool IsUniqueUser(string email);
-    public Task<TokenResponse> Login(LoginCredentials loginRequestDTO);
-    public Task<TokenResponse> Register(UserRegistrationModel registrationRequestDTO);
-    public Task Logout(string token);
-    public Task Edit(string token, UserEditModel model);
-    public Task<UserDto> GetProfile(string token);
+    public Task<bool> IsUniqueUser(string email);
+    public Task<bool> IsUniquePhoneNumber(string phoneNumber);
+    public Task<AuthResponseDTO> Login(LoginRequestDTO loginData);
+    public Task<AuthResponseDTO> Register(RegistrationRequestDTO registrationData);
+    public Task Logout(string accessToken);
+    public Task ChangeProfileInfo(Guid userId, ChangeProfileRequestDTO newProfileInfo);
+    public Task<ProfileResponseDTO> GetProfile(Guid userId);
 }

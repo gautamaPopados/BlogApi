@@ -1,8 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using WebApplication1.AuthentificationServices;
 using WebApplication1.Data;
 using WebApplication1.Data.DTO;
+using WebApplication1.Data.DTO.Community;
+using WebApplication1.Data.DTO.Post;
+using WebApplication1.Data.DTO.User;
 using WebApplication1.Data.Entities;
 using WebApplication1.Data.Enums;
 using WebApplication1.Exceptions;
@@ -13,12 +16,14 @@ namespace WebApplication1.Services
     public class CommunityService : ICommunityService
     {
         private readonly AppDbContext _db;
-        private readonly TokenService _tokenService;
+        private readonly ITokenService _tokenService; 
+        private readonly UserManager<User> _userManager;
         private readonly IEmailService _emailService;
 
-        public CommunityService(AppDbContext db, IConfiguration configuration, TokenService tokenService, IEmailService emailService)
+        public CommunityService(AppDbContext db, UserManager<User> userManager, ITokenService tokenService, IEmailService emailService)
         {
             _db = db;
+            _userManager = userManager;
             _tokenService = tokenService;
             _emailService = emailService;
         }
@@ -54,11 +59,11 @@ namespace WebApplication1.Services
             {
                 var admins = community.CommunityUsers.Where(t => t.Role == Data.Enums.CommunityRole.Administrator).Select(t => t.User);
 
-                var adminsDtos = new List<UserDto>();
+                var adminsDtos = new List<ProfileResponseDTO>();
 
                 foreach (var admin in admins)
                 {
-                    var newDto = new UserDto()
+                    var newDto = new ProfileResponseDTO()
                     {
                         id = admin.Id,
                         fullName = admin.FullName,
@@ -89,8 +94,8 @@ namespace WebApplication1.Services
 
         public async Task SubscribeUser(string token, Guid id)
         {
-            string userId = _tokenService.GetUserId(token);
-            var user = await _db.Users.Include(user => user.CommunityUsers).FirstOrDefaultAsync(user => user.Id.ToString() == userId);
+            var userId = _tokenService.GetUserIdFromToken(token);
+            var user = await _userManager.Users.Include(user => user.CommunityUsers).FirstOrDefaultAsync(user => user.Id == userId);
 
             if (user == null)
             {
@@ -114,7 +119,7 @@ namespace WebApplication1.Services
                 {
                     User = user,
                     Community = community,
-                    Role = Data.Enums.CommunityRole.Subscriber
+                    Role = CommunityRole.Subscriber
                 });
             community.SubscribersCount++;
 
@@ -124,8 +129,8 @@ namespace WebApplication1.Services
         }
         public async Task UnsubscribeUser(string token, Guid id)
         {
-            string userId = _tokenService.GetUserId(token);
-            var user = await _db.Users.Include(user => user.CommunityUsers).FirstOrDefaultAsync(user => user.Id.ToString() == userId);
+            var userId = _tokenService.GetUserIdFromToken(token);
+            var user = await _userManager.Users.Include(user => user.CommunityUsers).FirstOrDefaultAsync(user => user.Id == userId);
 
             if (user == null)
             {
@@ -155,9 +160,9 @@ namespace WebApplication1.Services
         }
         public async Task<List<CommunityUserDto>> GetUserCommunities(string token)
         {
-            string userId = _tokenService.GetUserId(token);
+            var userId = _tokenService.GetUserIdFromToken(token);
 
-            var user = await _db.Users.Include(user => user.CommunityUsers).FirstOrDefaultAsync(user => user.Id.ToString() == userId);
+            var user = await _userManager.Users.Include(user => user.CommunityUsers).FirstOrDefaultAsync(user => user.Id == userId);
 
             if (user == null)
             {
@@ -180,8 +185,8 @@ namespace WebApplication1.Services
 
         public async Task<CommunityRole?> GetGreatestRole(string token, Guid id)
         {
-            string userId = _tokenService.GetUserId(token);
-            var user = await _db.Users.Include(user => user.CommunityUsers).FirstOrDefaultAsync(user => user.Id.ToString() == userId);
+            var userId = _tokenService.GetUserIdFromToken(token);
+            var user = await _userManager.Users.Include(user => user.CommunityUsers).FirstOrDefaultAsync(user => user.Id == userId);
 
             if (user == null)
             {
@@ -213,7 +218,7 @@ namespace WebApplication1.Services
 
         public async Task<Guid> Create(CreatePostDto model, Guid communityId, string token)
         {
-            Guid userId = new Guid(_tokenService.GetUserId(token));
+            Guid userId = _tokenService.GetUserIdFromToken(token);
             var user = await _db.Users.Include(user => user.CommunityUsers).FirstOrDefaultAsync(user => user.Id == userId);
 
             if (user == null)
@@ -290,7 +295,7 @@ namespace WebApplication1.Services
             if (!String.IsNullOrEmpty(token))
             {
 
-                userId = new Guid(_tokenService.GetUserId(token));
+                userId = _tokenService.GetUserIdFromToken(token);
                 user = await _db.Users.Include(user => user.CommunityUsers).FirstOrDefaultAsync(user => user.Id == userId);
             }
 

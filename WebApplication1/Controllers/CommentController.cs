@@ -1,18 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Swashbuckle.AspNetCore.Filters;
-using System.Diagnostics.CodeAnalysis;
-using System.IdentityModel.Tokens.Jwt;
-using System.Net;
-using WebApplication1.AuthentificationServices;
-using WebApplication1.Data.DTO;
-using WebApplication1.Data.Enums;
-using WebApplication1.Exceptions;
+using WebApplication1.Data.BannedToken;
+using WebApplication1.Data.DTO.Comment;
+using WebApplication1.Data.DTO.Community;
 using WebApplication1.Middleware;
-using WebApplication1.Services;
 using WebApplication1.Services.IServices;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace WebApplication1.Controllers
 {
@@ -39,7 +31,7 @@ namespace WebApplication1.Controllers
         [ProducesResponseType(typeof(ExceptionResponse), 403)]
         [ProducesResponseType(typeof(ExceptionResponse), 404)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = "Bearer")]
         [HttpPost("post/{id}/comment")]
         public async Task<IActionResult> CreateComment([FromBody] CreateCommentDto model, Guid id)
         {
@@ -60,7 +52,8 @@ namespace WebApplication1.Controllers
         [ProducesResponseType(typeof(ExceptionResponse), 403)]
         [ProducesResponseType(typeof(ExceptionResponse), 404)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        [ServiceFilter(typeof(TokenBlacklistFilterAttribute))]
         [HttpPut("comment/{id}")]
         public async Task<IActionResult> UpdateComment([FromBody] UpdateCommentDto model, Guid id)
         {
@@ -81,7 +74,8 @@ namespace WebApplication1.Controllers
         [ProducesResponseType(typeof(ExceptionResponse), 403)]
         [ProducesResponseType(typeof(ExceptionResponse), 404)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        [ServiceFilter(typeof(TokenBlacklistFilterAttribute))]
         [HttpDelete("comment/{id}")]
         public async Task<IActionResult> DeleteComment(Guid id)
         {
@@ -100,6 +94,7 @@ namespace WebApplication1.Controllers
         [ProducesResponseType(typeof(ExceptionResponse), 400)]
         [ProducesResponseType(typeof(ExceptionResponse), 404)]
         [ProducesResponseType(typeof(ExceptionResponse), 500)]
+        [ServiceFilter(typeof(TokenBlacklistFilterAttribute))]
         [AllowAnonymous]
         [HttpGet("comment/{id}/tree")]
         public async Task<IActionResult> GetTree(Guid id)

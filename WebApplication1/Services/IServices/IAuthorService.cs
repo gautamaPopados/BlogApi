@@ -1,4 +1,4 @@
-﻿using WebApplication1.Data.DTO;
+﻿using WebApplication1.Data.DTO.Post;
 
 namespace WebApplication1.Services.IServices
 {
