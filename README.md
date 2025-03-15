@@ -25,7 +25,7 @@
 - ГАР (ФИАС) для работы с адресами
 - Swagger для документации API
 
-## Установка ⚙️
+## Установка 
 1. Клонировать репозиторий:
 ```bash
 git clone https://github.com/gautamaPopados/BlogApi.git
