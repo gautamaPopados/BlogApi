@@ -65,7 +65,7 @@ namespace WebApplication1.Controllers
         }
 
         /// <summary>
-        /// Delete comments
+        /// Delete comment
         /// </summary>
 
         [ProducesResponseType(200)]
