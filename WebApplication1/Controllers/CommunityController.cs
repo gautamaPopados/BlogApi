@@ -159,7 +159,7 @@ namespace WebApplication1.Controllers
         }
 
         /// <summary>
-        /// Create a post in the specified community
+        /// Get community's posts
         /// </summary>
 
         [ProducesResponseType(typeof(Guid), 200)]
